@@ -2,22 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>voiceMD - Voice Data Collection</title>
-  <style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Syngenta Trial Data Entry</title>
+    <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
       padding: 20px;
     }
-    
+
     .container {
       max-width: 1400px;
       margin: 0 auto;
@@ -26,685 +26,446 @@
       box-shadow: 0 20px 60px rgba(0,0,0,0.3);
       overflow: hidden;
     }
-    
+
     .header {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
       padding: 30px;
       text-align: center;
     }
-    
+
     .header h1 {
       font-size: 2.5em;
       margin-bottom: 10px;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
     }
-    
-    .page {
-      display: none;
-      padding: 30px;
+
+    .content {
+      padding: 40px;
     }
-    
-    .page.active {
-      display: block;
-    }
-    
-    .btn {
-      padding: 12px 24px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: all 0.3s;
-      font-weight: 600;
-      margin: 5px;
-    }
-    
-    .btn-primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-    }
-    
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-    }
-    
-    .btn-success {
-      background: #10b981;
-      color: white;
-    }
-    
-    .btn-danger {
-      background: #ef4444;
-      color: white;
-    }
-    
-    .btn-secondary {
-      background: #6b7280;
-      color: white;
-    }
-    
-    .btn-warning {
-      background: #f59e0b;
-      color: white;
-    }
-    
+
     .form-group {
-      margin-bottom: 20px;
+      margin-bottom: 25px;
     }
-    
+
     .form-group label {
       display: block;
-      margin-bottom: 8px;
       font-weight: 600;
-      color: #374151;
+      margin-bottom: 8px;
+      color: #333;
+      font-size: 16px;
     }
-    
-    .form-group input, .form-group select {
+
+    .form-group input {
       width: 100%;
       padding: 12px;
-      border: 2px solid #e5e7eb;
+      border: 2px solid #ddd;
       border-radius: 8px;
       font-size: 16px;
       transition: border-color 0.3s;
     }
-    
-    .form-group input:focus, .form-group select:focus {
+
+    .form-group input:focus {
       outline: none;
       border-color: #667eea;
     }
-    
-    .trial-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 15px;
-      margin-top: 20px;
-    }
-    
-    .trial-card {
-      background: #f9fafb;
-      border: 2px solid #e5e7eb;
-      border-radius: 10px;
-      padding: 20px;
+
+    .btn {
+      padding: 12px 30px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
       cursor: pointer;
       transition: all 0.3s;
     }
-    
-    .trial-card:hover {
-      border-color: #667eea;
-      transform: translateY(-3px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
     }
-    
-    .trial-card h3 {
-      color: #667eea;
-      margin-bottom: 10px;
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
     }
-    
-    .trial-card p {
-      color: #6b7280;
-      font-size: 14px;
-      margin: 5px 0;
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+      margin-left: 10px;
     }
-    
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 20px;
-      align-items: center;
-      justify-content: center;
+
+    .btn-secondary:hover {
+      background: #5a6268;
     }
-    
-    .status {
-      background: #f3f4f6;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      text-align: center;
-      border: 2px solid #e5e7eb;
-      transition: all 0.3s;
+
+    .btn-success {
+      background: #28a745;
+      color: white;
+      margin-left: 10px;
     }
-    
-    .status.listening {
-      background: #dcfce7;
-      border-color: #10b981;
-      animation: pulse 2s infinite;
+
+    .btn-success:hover {
+      background: #218838;
     }
-    
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.8; }
-    }
-    
-    .status-text {
-      font-size: 18px;
-      font-weight: 600;
-      color: #374151;
-    }
-        .table-container {
+
+    .table-container {
       overflow-x: auto;
-      margin-top: 20px;
+      margin-top: 30px;
+      border: 2px solid #ddd;
       border-radius: 8px;
-      border: 2px solid #e5e7eb;
     }
-    
+
     table {
       width: 100%;
       border-collapse: collapse;
       background: white;
     }
-    
+
     th {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      padding: 12px;
+      padding: 15px;
       text-align: left;
       font-weight: 600;
       position: sticky;
       top: 0;
       z-index: 10;
     }
-    
+
     td {
-      padding: 12px;
-      border: 1px solid #e5e7eb;
-      cursor: pointer;
-      transition: background 0.2s;
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      min-width: 100px;
     }
-    
-    td:hover {
-      background: #f9fafb;
+
+    td[contenteditable="true"] {
+      cursor: text;
+      background: #f8f9fa;
     }
-    
+
+    td[contenteditable="true"]:hover {
+      background: #e9ecef;
+    }
+
     td[contenteditable="true"]:focus {
       outline: 2px solid #667eea;
-      background: #eff6ff;
-    }
-    
-    .current-cell {
-      background: #fef3c7 !important;
-      border: 2px solid #f59e0b !important;
-      animation: highlight 1s ease-in-out;
-    }
-    
-    @keyframes highlight {
-      0%, 100% { background: #fef3c7; }
-      50% { background: #fde68a; }
-    }
-    
-    .legend {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-      max-width: 300px;
-      display: none;
-      z-index: 1000;
-    }
-    
-    .legend.active {
-      display: block;
-    }
-    
-    .legend h3 {
-      margin-bottom: 15px;
-      color: #667eea;
-    }
-    
-    .legend-item {
-      margin: 10px 0;
-      font-size: 14px;
-      color: #374151;
-    }
-    
-    .legend-item strong {
-      color: #667eea;
-    }
-    
-    .watermark {
-      text-align: center;
-      padding: 20px;
-      color: #9ca3af;
-      font-size: 14px;
-      font-style: italic;
-    }
-    
-    .settings-panel {
-      background: #f9fafb;
-      border: 2px solid #e5e7eb;
-      border-radius: 10px;
-      padding: 20px;
-      margin-bottom: 20px;
-    }
-    
-    .settings-panel h3 {
-      color: #667eea;
-      margin-bottom: 15px;
-    }
-    
-    .toggle-switch {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      margin: 10px 0;
-    }
-    
-    .toggle-switch input[type="checkbox"] {
-      width: 50px;
-      height: 26px;
-      position: relative;
-      appearance: none;
-      background: #cbd5e1;
-      border-radius: 13px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    
-    .toggle-switch input[type="checkbox"]:checked {
-      background: #10b981;
-    }
-    
-    .toggle-switch input[type="checkbox"]::before {
-      content: '';
-      position: absolute;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: white;
-      top: 2px;
-      left: 2px;
-      transition: transform 0.3s;
-    }
-    
-    .toggle-switch input[type="checkbox"]:checked::before {
-      transform: translateX(24px);
-    }
-    
-    .mode-indicator {
-      display: inline-block;
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-weight: 600;
-      font-size: 14px;
-      margin: 10px 0;
-    }
-    
-    .mode-single {
-      background: #dbeafe;
-      color: #1e40af;
-    }
-    
-    .mode-batch {
-      background: #fce7f3;
-      color: #be185d;
+      background: #fff;
     }
 
-    .assessment-inputs {
-      background: #f0f9ff;
-      padding: 15px;
-      border-radius: 8px;
-      margin-top: 10px;
+    .cell-highlight {
+      background: #fff3cd !important;
+      outline: 3px solid #ffc107 !important;
     }
 
-    .assessment-input-row {
+    .controls {
+      margin-top: 20px;
       display: flex;
       gap: 10px;
-      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .assessment-manager {
+      margin-top: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+
+    .assessment-manager h3 {
+      margin-bottom: 15px;
+      color: #333;
+    }
+
+    .assessment-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .assessment-tag {
+      background: #667eea;
+      color: white;
+      padding: 8px 15px;
+      border-radius: 20px;
+      display: flex;
       align-items: center;
+      gap: 10px;
     }
 
-    .assessment-input-row input {
-      flex: 1;
+    .assessment-tag button {
+      background: rgba(255,255,255,0.3);
+      border: none;
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      font-size: 12px;
     }
 
-    .assessment-input-row button {
-      padding: 8px 12px;
+    .assessment-tag button:hover {
+      background: rgba(255,255,255,0.5);
     }
-    
-    @media (max-width: 768px) {
-      .header h1 {
-        font-size: 1.8em;
-      }
-      
-      .controls {
-        flex-direction: column;
-      }
-      
-      .btn {
-        width: 100%;
-      }
+
+    #setupScreen, #dataEntryScreen {
+      display: none;
+    }
+
+    .trial-selector {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+
+    .trial-selector h3 {
+      margin-bottom: 15px;
+      color: #333;
+    }
+
+    .trial-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .trial-card {
+      background: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      border: 2px solid #ddd;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .trial-card:hover {
+      border-color: #667eea;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .trial-card.active {
+      border-color: #667eea;
+      background: #f0f4ff;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>🎤 voiceMD</h1>
-      <p>Voice-Powered Data Collection System</p>
+      <h1>🌾 Syngenta Trial Data Entry</h1>
+      <p>Professional Field Trial Management System</p>
     </div>
 
-    <!-- STARTUP PAGE -->
-    <div id="startupPage" class="page active">
-      <h2 style="text-align: center; color: #667eea; margin-bottom: 30px;">Welcome to voiceMD</h2>
-      
-      <div class="form-group">
-        <label>📋 Trial Code</label>
-        <input type="text" id="trialCode" placeholder="Enter trial code (e.g., TRIAL001)">
-      </div>
-      
-      <div class="form-group">
-        <label>🧪 Number of Treatments</label>
-        <input type="number" id="numTreatments" min="1" max="50" value="4">
-      </div>
-
-      <div class="form-group">
-        <label>🔁 Number of Reps</label>
-        <input type="number" id="numReps" min="1" max="20" value="3">
-      </div>
-      
-      <div class="form-group">
-        <label>📊 Number of Subplots per Rep</label>
-        <input type="number" id="numSubplots" min="1" max="50" value="5">
-      </div>
-
-      <div class="form-group">
-        <label>📈 Assessment Columns</label>
-        <div class="assessment-inputs" id="assessmentInputs">
-          <div class="assessment-input-row">
-            <input type="text" placeholder="Assessment name (e.g., Height)" value="Assessment 1">
-            <button class="btn btn-danger" onclick="removeAssessment(this)">✕</button>
-          </div>
+    <div class="content">
+      <!-- Trial Selection Screen -->
+      <div id="trialSelectionScreen">
+        <div class="trial-selector">
+          <h3>Select Existing Trial</h3>
+          <div class="trial-list" id="trialList"></div>
         </div>
-        <button class="btn btn-primary" onclick="addAssessment()" style="margin-top: 10px;">
-          ➕ Add Assessment Column
+        <button class="btn btn-primary" onclick="showSetupScreen()" style="font-size: 18px; padding: 15px 40px;">
+          ➕ Create New Trial
         </button>
       </div>
-      
-      <div style="text-align: center; margin-top: 30px;">
+
+      <!-- Setup Screen -->
+      <div id="setupScreen">
+        <h2 style="margin-bottom: 30px; color: #333;">Create New Trial</h2>
+        
+        <div class="form-group">
+          <label for="code">Trial Code</label>
+          <input type="text" id="code" placeholder="e.g., TRIAL-2024-001">
+        </div>
+
+        <div class="form-group">
+          <label for="treatments">Number of Treatments</label>
+          <input type="number" id="treatments" min="1" value="4">
+        </div>
+
+        <div class="form-group">
+          <label for="reps">Number of Replications</label>
+          <input type="number" id="reps" min="1" value="3">
+        </div>
+
+        <div class="form-group">
+          <label for="subplots">Number of Subplots per Rep</label>
+          <input type="number" id="subplots" min="1" value="2">
+        </div>
+
         <button class="btn btn-primary" onclick="createTrial()" style="font-size: 18px; padding: 15px 40px;">
-          ✨ Create New Trial
+          Create Trial
+        </button>
+        <button class="btn btn-secondary" onclick="backToSelection()">
+          Cancel
         </button>
       </div>
-      
-      <div id="trialList" class="trial-list"></div>
-      
-      <div class="watermark">
-        By Mr Sa
-      </div>
-    </div>
 
-    <!-- DATA COLLECTION PAGE -->
-    <div id="dataPage" class="page">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap;">
-        <h2 style="color: #667eea;">📊 <span id="currentTrialName"></span></h2>
-        <button class="btn btn-secondary" onclick="backToStartup()">← Back to Trials</button>
-      </div>
+      <!-- Data Entry Screen -->
+      <div id="dataEntryScreen">
+        <h2 id="trialTitle" style="margin-bottom: 20px; color: #333;"></h2>
 
-      <!-- SETTINGS PANEL -->
-      <div class="settings-panel">
-        <h3>⚙️ Voice Recognition Settings</h3>
-        
-        <div class="toggle-switch">
-          <input type="checkbox" id="batchModeToggle" onchange="toggleBatchMode()">
-          <label for="batchModeToggle">
-            <strong>Batch Mode</strong> (Record multiple numbers in succession)
-          </label>
+        <div class="assessment-manager">
+          <h3>Assessment Columns</h3>
+          <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <input type="text" id="newAssessment" placeholder="e.g., Plant Height" style="flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 8px;">
+            <button class="btn btn-primary" onclick="addAssessment()">Add Column</button>
+          </div>
+          <div class="assessment-list" id="assessmentList"></div>
         </div>
-        
-        <div class="mode-indicator" id="modeIndicator">
-          <span id="modeText">Single Cell Mode</span>
+
+        <div class="table-container">
+          <table>
+            <thead id="tableHeader"></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
         </div>
-        
-        <div class="toggle-switch">
-          <input type="checkbox" id="multiplesOf5Toggle" onchange="toggleMultiplesOf5()">
-          <label for="multiplesOf5Toggle">
-            <strong>Multiples of 5 Only</strong> (0, 5, 10, 15, 20, 25...)
-          </label>
+
+        <div class="controls">
+          <button class="btn btn-success" onclick="exportToCSV()">📥 Export to CSV</button>
+          <button class="btn btn-secondary" onclick="backToSelection()">🔙 Back to Trials</button>
         </div>
-      </div>
-
-      <!-- STATUS DISPLAY -->
-      <div class="status" id="status">
-        <div class="status-text" id="statusText">Ready to start</div>
-        <div style="margin-top: 10px; color: #6b7280;" id="transcriptDisplay"></div>
-      </div>
-
-      <!-- CONTROLS -->
-      <div class="controls">
-        <button class="btn btn-success" id="startBtn" onclick="startListening()">
-          🎤 Start Voice
-        </button>
-        <button class="btn btn-danger" id="stopBtn" onclick="stopListening()" disabled>
-          ⏹️ Stop Voice
-        </button>
-        <button class="btn btn-warning" onclick="undoLastEntry()">
-          ↩️ Undo Last
-        </button>
-        <button class="btn btn-primary" onclick="exportToCSV()">
-          💾 Export CSV
-        </button>
-        <button class="btn btn-secondary" onclick="toggleLegend()">
-          ❓ Help
-        </button>
-      </div>
-
-      <!-- DATA TABLE -->
-      <div class="table-container">
-        <table id="dataTable">
-          <thead id="tableHeader"></thead>
-          <tbody id="tableBody"></tbody>
-        </table>
       </div>
     </div>
   </div>
-
-  <!-- LEGEND -->
-  <div class="legend" id="legend">
-    <h3>📖 Voice Commands Guide</h3>
-    <div class="legend-item">
-      <strong>Numbers:</strong> Say any number (e.g., "5", "twenty three")
-    </div>
-    <div class="legend-item">
-      <strong>Skip:</strong> Say "skip" or "next" to move to next cell
-    </div>
-    <div class="legend-item">
-      <strong>Delete:</strong> Say "delete" or "clear" to empty current cell
-    </div>
-    <div class="legend-item">
-      <strong>Batch Mode:</strong> Enable to record multiple numbers continuously
-    </div>
-    <div class="legend-item">
-      <strong>Multiples of 5:</strong> Rounds all numbers to nearest 5
-    </div>
-  </div>
-
-  <script>
-        // ==================== GLOBAL STATE ====================
+    <script>
     let currentTrial = null;
-    let recognition = null;
-    let isListening = false;
-    let currentRow = 0;
-    let currentCol = 1; // Start at first assessment column (skip Subplot column)
-    let batchMode = false;
-    let multiplesOf5 = false;
-    let undoStack = [];
-    let assessmentColumns = ['Assessment 1'];
+    let assessmentColumns = ['Plant Height', 'Yield', 'Disease Score'];
+    let currentCell = { row: 0, col: 0 }; // col 0 = first assessment column
 
-    // ==================== INITIALIZATION ====================
-    function initApp() {
-      loadTrials();
-      setupSpeechRecognition();
-    }
+    // Initialize app
+    window.onload = function() {
+      loadTrialList();
+      document.getElementById('trialSelectionScreen').style.display = 'block';
+    };
 
-    function setupSpeechRecognition() {
-      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        alert('Speech recognition not supported in this browser. Please use Chrome, Edge, or Safari.');
-        return;
-      }
-
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
-
-      recognition.onresult = handleSpeechResult;
-      recognition.onerror = handleSpeechError;
-      recognition.onend = handleSpeechEnd;
-    }
-
-    // ==================== ASSESSMENT COLUMN MANAGEMENT ====================
-    function addAssessment() {
-      const container = document.getElementById('assessmentInputs');
-      const count = container.children.length + 1;
-      const row = document.createElement('div');
-      row.className = 'assessment-input-row';
-      row.innerHTML = `
-        <input type="text" placeholder="Assessment name" value="Assessment ${count}">
-        <button class="btn btn-danger" onclick="removeAssessment(this)">✕</button>
-      `;
-      container.appendChild(row);
-    }
-
-    function removeAssessment(btn) {
-      const container = document.getElementById('assessmentInputs');
-      if (container.children.length > 1) {
-        btn.parentElement.remove();
-      } else {
-        alert('You must have at least one assessment column!');
-      }
-    }
-
-    function getAssessmentColumns() {
-      const inputs = document.querySelectorAll('#assessmentInputs input');
-      return Array.from(inputs).map(input => input.value.trim() || 'Assessment');
-    }
-
-    // ==================== TRIAL MANAGEMENT ====================
-    function createTrial() {
-      const trialCode = document.getElementById('trialCode').value.trim();
-      const numTreatments = parseInt(document.getElementById('numTreatments').value);
-      const numReps = parseInt(document.getElementById('numReps').value);
-      const numSubplots = parseInt(document.getElementById('numSubplots').value);
-
-      if (!trialCode) {
-        alert('Please enter a trial code');
-        return;
-      }
-
-      assessmentColumns = getAssessmentColumns();
-
-      const trial = {
-        code: trialCode,
-        numTreatments,
-        numReps,
-        numSubplots,
-        assessmentColumns: assessmentColumns,
-        data: [],
-        created: new Date().toISOString()
-      };
-
-      // Generate data structure
-      for (let t = 1; t <= numTreatments; t++) {
-        for (let r = 1; r <= numReps; r++) {
-          for (let s = 1; s <= numSubplots; s++) {
-            const row = {
-              treatment: t,
-              rep: r,
-              subplot: s
-            };
-            // Initialize assessment columns
-            assessmentColumns.forEach(col => {
-              row[col] = '';
-            });
-            trial.data.push(row);
-          }
-        }
-      }
-
-      saveTrialToStorage(trial);
-      loadTrial(trial);
-    }
-
-    function saveTrialToStorage(trial) {
-      let trials = JSON.parse(localStorage.getItem('voiceMD_trials') || '[]');
-      const existingIndex = trials.findIndex(t => t.code === trial.code);
-      
-      if (existingIndex >= 0) {
-        trials[existingIndex] = trial;
-      } else {
-        trials.push(trial);
-      }
-      
-      localStorage.setItem('voiceMD_trials', JSON.stringify(trials));
-      loadTrials();
-    }
-
-    function loadTrials() {
-      const trials = JSON.parse(localStorage.getItem('voiceMD_trials') || '[]');
-      const container = document.getElementById('trialList');
+    // Load trial list from localStorage
+    function loadTrialList() {
+      const trials = getAllTrials();
+      const trialList = document.getElementById('trialList');
       
       if (trials.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: #9ca3af; padding: 40px;">No trials yet. Create your first trial above!</p>';
+        trialList.innerHTML = '<p style="color: #666;">No trials yet. Create your first trial!</p>';
         return;
       }
 
-      container.innerHTML = trials.map(trial => `
-        <div class="trial-card" onclick='loadTrialByCode("${trial.code}")'>
-          <h3>${trial.code}</h3>
-          <p>🧪 ${trial.numTreatments} treatments × ${trial.numReps} reps</p>
-          <p>📊 ${trial.numSubplots} subplots per rep</p>
-          <p>📈 ${trial.assessmentColumns.length} assessments</p>
-          <p style="font-size: 12px; color: #9ca3af;">Created: ${new Date(trial.created).toLocaleDateString()}</p>
+      trialList.innerHTML = trials.map(trial => `
+        <div class="trial-card" onclick="loadTrial('${trial.code}')">
+          <strong>${trial.code}</strong><br>
+          <small>${trial.data.length} records</small>
         </div>
       `).join('');
     }
 
-    function loadTrialByCode(code) {
-      const trials = JSON.parse(localStorage.getItem('voiceMD_trials') || '[]');
-      const trial = trials.find(t => t.code === code);
-      if (trial) loadTrial(trial);
+    // Get all trials from localStorage
+    function getAllTrials() {
+      const trials = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('trial_')) {
+          trials.push(JSON.parse(localStorage.getItem(key)));
+        }
+      }
+      return trials;
     }
 
-    function loadTrial(trial) {
-      currentTrial = trial;
-      assessmentColumns = trial.assessmentColumns;
-      document.getElementById('currentTrialName').textContent = trial.code;
-      
+    // Show setup screen
+    function showSetupScreen() {
+      document.getElementById('trialSelectionScreen').style.display = 'none';
+      document.getElementById('setupScreen').style.display = 'block';
+    }
+
+    // Back to selection
+    function backToSelection() {
+      document.getElementById('setupScreen').style.display = 'none';
+      document.getElementById('dataEntryScreen').style.display = 'none';
+      document.getElementById('trialSelectionScreen').style.display = 'block';
+      loadTrialList();
+    }
+
+    // Create new trial
+    function createTrial() {
+      const code = document.getElementById('code').value.trim();
+      const numTreatments = parseInt(document.getElementById('treatments').value);
+      const numReps = parseInt(document.getElementById('reps').value);
+      const numSubplots = parseInt(document.getElementById('subplots').value);
+
+      if (!code || numTreatments < 1 || numReps < 1 || numSubplots < 1) {
+        alert('Please fill all fields with valid numbers');
+        return;
+      }
+
+      // Generate data structure
+      const data = [];
+      for (let t = 1; t <= numTreatments; t++) {
+        for (let r = 1; r <= numReps; r++) {
+          for (let s = 1; s <= numSubplots; s++) {
+            const row = {
+              treatment: `T${t}`,
+              rep: `R${r}`,
+              subplot: `S${s}`
+            };
+            assessmentColumns.forEach(col => row[col] = '');
+            data.push(row);
+          }
+        }
+      }
+
+      currentTrial = { code, data };
+      saveTrialToStorage(currentTrial);
+
+      document.getElementById('setupScreen').style.display = 'none';
+      document.getElementById('dataEntryScreen').style.display = 'block';
+      document.getElementById('trialTitle').textContent = `Trial: ${code}`;
+
       renderTable();
-      
-      document.getElementById('startupPage').classList.remove('active');
-      document.getElementById('dataPage').classList.add('active');
-      
-      currentRow = 0;
-      currentCol = 1; // Start at first assessment column
+      renderAssessmentList();
       highlightCurrentCell();
     }
 
-    function backToStartup() {
-      if (currentTrial) {
-        saveTrialToStorage(currentTrial);
+    // Load existing trial
+    function loadTrial(code) {
+      const trial = JSON.parse(localStorage.getItem(`trial_${code}`));
+      if (!trial) {
+        alert('Trial not found');
+        return;
       }
+
+      currentTrial = trial;
       
-      document.getElementById('dataPage').classList.remove('active');
-      document.getElementById('startupPage').classList.add('active');
-      
-      if (isListening) stopListening();
+      // Extract assessment columns from first data row
+      if (trial.data.length > 0) {
+        assessmentColumns = Object.keys(trial.data[0]).filter(
+          key => !['treatment', 'rep', 'subplot'].includes(key)
+        );
+      }
+
+      document.getElementById('trialSelectionScreen').style.display = 'none';
+      document.getElementById('dataEntryScreen').style.display = 'block';
+      document.getElementById('trialTitle').textContent = `Trial: ${code}`;
+
+      renderTable();
+      renderAssessmentList();
+      highlightCurrentCell();
     }
 
-    // ==================== TABLE RENDERING ====================
+    // Save trial to localStorage
+    function saveTrialToStorage(trial) {
+      localStorage.setItem(`trial_${trial.code}`, JSON.stringify(trial));
+    }
+
+    // Render table
     function renderTable() {
       const headerRow = document.getElementById('tableHeader');
       const tbody = document.getElementById('tableBody');
 
-      // Create header with Subplot + Assessment columns
+      // Create header
       headerRow.innerHTML = `
         <tr>
+          <th>Treatment</th>
+          <th>Rep</th>
           <th>Subplot</th>
           ${assessmentColumns.map(col => `<th>${col}</th>`).join('')}
         </tr>
@@ -713,304 +474,165 @@
       // Create data rows
       tbody.innerHTML = currentTrial.data.map((row, idx) => `
         <tr data-row="${idx}">
+          <td>${row.treatment}</td>
+          <td>${row.rep}</td>
           <td>${row.subplot}</td>
           ${assessmentColumns.map((col, colIdx) => `
             <td contenteditable="true" 
                 data-row="${idx}" 
-                data-col="${colIdx + 1}"
-                onblur="updateCellManually(${idx}, ${colIdx + 1}, this.textContent)"
-                onclick="selectCell(${idx}, ${colIdx + 1})">
-              ${row[col] || ''}
-            </td>
+                data-col="${colIdx}"
+                onblur="updateCell(${idx}, '${col}', this.textContent)"
+                onfocus="setCurrentCell(${idx}, ${colIdx})"
+            >${row[col] || ''}</td>
           `).join('')}
         </tr>
       `).join('');
     }
 
+    // Render assessment list
+    function renderAssessmentList() {
+      const list = document.getElementById('assessmentList');
+      list.innerHTML = assessmentColumns.map((col, idx) => `
+        <div class="assessment-tag">
+          ${col}
+          <button onclick="removeAssessment(${idx})">×</button>
+        </div>
+      `).join('');
+    }
+
+    // Add assessment column
+    function addAssessment() {
+      const input = document.getElementById('newAssessment');
+      const name = input.value.trim();
+      
+      if (!name) {
+        alert('Please enter a column name');
+        return;
+      }
+
+      if (assessmentColumns.includes(name)) {
+        alert('Column already exists');
+        return;
+      }
+
+      assessmentColumns.push(name);
+      
+      // Add column to all data rows
+      currentTrial.data.forEach(row => row[name] = '');
+      
+      saveTrialToStorage(currentTrial);
+      renderTable();
+      renderAssessmentList();
+      
+      input.value = '';
+    }
+
+    // Remove assessment column
+    function removeAssessment(idx) {
+      if (!confirm(`Remove "${assessmentColumns[idx]}" column?`)) return;
+      
+      const colName = assessmentColumns[idx];
+      assessmentColumns.splice(idx, 1);
+      
+      // Remove from all data rows
+      currentTrial.data.forEach(row => delete row[colName]);
+      
+      saveTrialToStorage(currentTrial);
+      renderTable();
+      renderAssessmentList();
+    }
+
+    // Update cell value
+    function updateCell(rowIdx, colName, value) {
+      currentTrial.data[rowIdx][colName] = value.trim();
+      saveTrialToStorage(currentTrial);
+    }
+
+    // Set current cell for navigation
+    function setCurrentCell(row, col) {
+      currentCell = { row, col };
+    }
+
+    // Highlight current cell
     function highlightCurrentCell() {
-      document.querySelectorAll('td').forEach(td => td.classList.remove('current-cell'));
-      
-      const cell = document.querySelector(`td[data-row="${currentRow}"][data-col="${currentCol}"]`);
-      if (cell) {
-        cell.classList.add('current-cell');
-        cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }
-
-    function selectCell(row, col) {
-      currentRow = row;
-      currentCol = col;
-      highlightCurrentCell();
-    }
-
-    function updateCellManually(row, col, value) {
-      const colName = assessmentColumns[col - 1];
-      currentTrial.data[row][colName] = value;
-      saveTrialToStorage(currentTrial);
-    }
-
-    // ==================== VOICE RECOGNITION ====================
-    function startListening() {
-      if (!recognition) {
-        alert('Speech recognition not available');
-        return;
-      }
-
-      recognition.start();
-      isListening = true;
-      
-      document.getElementById('startBtn').disabled = true;
-      document.getElementById('stopBtn').disabled = false;
-      document.getElementById('status').classList.add('listening');
-      document.getElementById('statusText').textContent = batchMode ? 
-        '🎤 Listening (Batch Mode - say numbers continuously)' : 
-        '🎤 Listening (Single Cell Mode)';
-    }
-
-    function stopListening() {
-      if (recognition) {
-        recognition.stop();
-      }
-      isListening = false;
-      
-      document.getElementById('startBtn').disabled = false;
-      document.getElementById('stopBtn').disabled = true;
-      document.getElementById('status').classList.remove('listening');
-      document.getElementById('statusText').textContent = 'Stopped';
-    }
-
-    function handleSpeechResult(event) {
-      const transcript = Array.from(event.results)
-        .map(result => result[0].transcript)
-        .join('');
-
-      document.getElementById('transcriptDisplay').textContent = `Heard: "${transcript}"`;
-
-      // Only process final results
-      if (event.results[event.results.length - 1].isFinal) {
-        processVoiceCommand(transcript.toLowerCase().trim());
-      }
-    }
-
-    function handleSpeechError(event) {
-      console.error('Speech recognition error:', event.error);
-      if (event.error === 'no-speech') {
-        document.getElementById('statusText').textContent = 'No speech detected. Try again.';
-      }
-    }
-
-    function handleSpeechEnd() {
-      if (isListening) {
-        recognition.start(); // Restart if still in listening mode
-      }
-    }
-
-    function processVoiceCommand(text) {
-      // Handle skip/next commands
-      if (text.includes('skip') || text.includes('next')) {
-        moveToNextCell();
-        return;
-      }
-
-      // Handle delete/clear commands
-      if (text.includes('delete') || text.includes('clear')) {
-        clearCurrentCell();
-        return;
-      }
-
-      // Extract number from speech
-      let number = extractNumber(text);
-      
-      if (number !== null) {
-        if (multiplesOf5) {
-          number = Math.round(number / 5) * 5;
-        }
-        
-        insertNumber(number);
-        
-        if (batchMode) {
-          moveToNextCell();
-        }
-      }
-    }
-
-    function extractNumber(text) {
-      // Try to parse direct numbers
-      const directNumber = parseFloat(text);
-      if (!isNaN(directNumber)) return directNumber;
-
-      // Word to number conversion
-      const words = {
-        'zero': 0, 'one': 1, 'two': 2, 'three': 3, 'four': 4,
-        'five': 5, 'six': 6, 'seven': 7, 'eight': 8, 'nine': 9,
-        'ten': 10, 'eleven': 11, 'twelve': 12, 'thirteen': 13, 'fourteen': 14,
-        'fifteen': 15, 'sixteen': 16, 'seventeen': 17, 'eighteen': 18, 'nineteen': 19,
-        'twenty': 20, 'thirty': 30, 'forty': 40, 'fifty': 50,
-        'sixty': 60, 'seventy': 70, 'eighty': 80, 'ninety': 90,
-        'hundred': 100, 'thousand': 1000
-      };
-
-      let total = 0;
-      let current = 0;
-
-      text.split(/\s+/).forEach(word => {
-        const num = words[word];
-        if (num !== undefined) {
-          if (num === 100 || num === 1000) {
-            current = current === 0 ? num : current * num;
-          } else {
-            current += num;
-          }
-        }
+      document.querySelectorAll('td[contenteditable]').forEach(td => {
+        td.classList.remove('cell-highlight');
       });
 
-      total += current;
-      return total > 0 ? total : null;
-    }
-    function insertNumber(number) {
-      const colName = assessmentColumns[currentCol - 1];
-      const oldValue = currentTrial.data[currentRow][colName];
-      
-      // Save to undo stack
-      undoStack.push({
-        row: currentRow,
-        col: currentCol,
-        oldValue: oldValue,
-        newValue: number.toString()
-      });
-
-      // Update data
-      currentTrial.data[currentRow][colName] = number.toString();
-      
-      // Update cell display
-      const cell = document.querySelector(`td[data-row="${currentRow}"][data-col="${currentCol}"]`);
+      const cell = document.querySelector(`td[data-row="${currentCell.row}"][data-col="${currentCell.col}"]`);
       if (cell) {
-        cell.textContent = number;
+        cell.classList.add('cell-highlight');
+        cell.focus();
       }
-      
-      saveTrialToStorage(currentTrial);
-      
-      document.getElementById('statusText').textContent = `✅ Recorded: ${number}`;
     }
 
-    function clearCurrentCell() {
-      const colName = assessmentColumns[currentCol - 1];
-      const oldValue = currentTrial.data[currentRow][colName];
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+      if (document.getElementById('dataEntryScreen').style.display !== 'block') return;
       
-      undoStack.push({
-        row: currentRow,
-        col: currentCol,
-        oldValue: oldValue,
-        newValue: ''
-      });
+      const maxRow = currentTrial.data.length - 1;
+      const maxCol = assessmentColumns.length - 1;
 
-      currentTrial.data[currentRow][colName] = '';
-      
-      const cell = document.querySelector(`td[data-row="${currentRow}"][data-col="${currentCol}"]`);
-      if (cell) {
-        cell.textContent = '';
-      }
-      
-      saveTrialToStorage(currentTrial);
-      document.getElementById('statusText').textContent = '🗑️ Cell cleared';
-    }
-
-    function moveToNextCell() {
-      currentCol++;
-      
-      // If we've gone past the last assessment column, move to next row
-      if (currentCol > assessmentColumns.length) {
-        currentCol = 1; // Reset to first assessment column
-        currentRow++;
-        
-        // If we've gone past the last row, wrap to beginning
-        if (currentRow >= currentTrial.data.length) {
-          currentRow = 0;
-          document.getElementById('statusText').textContent = '🔄 Wrapped to beginning';
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (currentCell.row < maxRow) {
+          currentCell.row++;
+          highlightCurrentCell();
+        }
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (currentCell.row > 0) {
+          currentCell.row--;
+          highlightCurrentCell();
+        }
+      } else if (e.key === 'ArrowRight' || e.key === 'Tab') {
+        e.preventDefault();
+        if (currentCell.col < maxCol) {
+          currentCell.col++;
+        } else if (currentCell.row < maxRow) {
+          currentCell.col = 0;
+          currentCell.row++;
+        }
+        highlightCurrentCell();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        if (currentCell.col > 0) {
+          currentCell.col--;
+        } else if (currentCell.row > 0) {
+          currentCell.col = maxCol;
+          currentCell.row--;
+        }
+        highlightCurrentCell();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (currentCell.row < maxRow) {
+          currentCell.row++;
+          highlightCurrentCell();
         }
       }
-      
-      highlightCurrentCell();
-    }
+    });
 
-    function undoLastEntry() {
-      if (undoStack.length === 0) {
-        alert('Nothing to undo');
-        return;
-      }
-
-      const lastAction = undoStack.pop();
-      const colName = assessmentColumns[lastAction.col - 1];
-      
-      currentTrial.data[lastAction.row][colName] = lastAction.oldValue;
-      
-      const cell = document.querySelector(`td[data-row="${lastAction.row}"][data-col="${lastAction.col}"]`);
-      if (cell) {
-        cell.textContent = lastAction.oldValue;
-      }
-      
-      currentRow = lastAction.row;
-      currentCol = lastAction.col;
-      
-      highlightCurrentCell();
-      saveTrialToStorage(currentTrial);
-      
-      document.getElementById('statusText').textContent = '↩️ Undone';
-    }
-
-    // ==================== SETTINGS ====================
-    function toggleBatchMode() {
-      batchMode = document.getElementById('batchModeToggle').checked;
-      const indicator = document.getElementById('modeIndicator');
-      const modeText = document.getElementById('modeText');
-      
-      if (batchMode) {
-        indicator.className = 'mode-indicator mode-batch';
-        modeText.textContent = 'Batch Mode: Auto-advance after each number';
-      } else {
-        indicator.className = 'mode-indicator mode-single';
-        modeText.textContent = 'Single Cell Mode: Stay on current cell';
-      }
-    }
-
-    function toggleMultiplesOf5() {
-      multiplesOf5 = document.getElementById('multiplesOf5Toggle').checked;
-    }
-
-    function toggleLegend() {
-      document.getElementById('legend').classList.toggle('active');
-    }
-
-    // ==================== EXPORT ====================
+    // Export to CSV
     function exportToCSV() {
-      if (!currentTrial) return;
+      const headers = ['Treatment', 'Rep', 'Subplot', ...assessmentColumns];
+      const rows = currentTrial.data.map(row => [
+        row.treatment,
+        row.rep,
+        row.subplot,
+        ...assessmentColumns.map(col => row[col] || '')
+      ]);
 
-      // Create CSV header
-      let csv = 'Treatment,Rep,Subplot,' + assessmentColumns.join(',') + '\n';
+      let csv = headers.join(',') + '\n';
+      csv += rows.map(row => row.join(',')).join('\n');
 
-      // Add data rows
-      currentTrial.data.forEach(row => {
-        const values = [
-          row.treatment,
-          row.rep,
-          row.subplot,
-          ...assessmentColumns.map(col => row[col] || '')
-        ];
-        csv += values.join(',') + '\n';
-      });
-
-      // Download
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${currentTrial.code}_${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `${currentTrial.code}_data.csv`;
       a.click();
       window.URL.revokeObjectURL(url);
     }
-
-    // ==================== STARTUP ====================
-    window.onload = initApp;
   </script>
 </body>
 </html>
