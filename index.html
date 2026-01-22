@@ -81,18 +81,33 @@
     .exit-corner {
       position: fixed;
       bottom: 0; right: 0;
-      width: 100px; height: 100px;
-      background: rgba(255, 59, 48, 0.3);
-      border-top-left-radius: 100px;
+      width: 150px; height: 150px;
+      background: rgba(255, 59, 48, 0.6);
+      border-top-left-radius: 150px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+      padding: 20px;
+      font-size: 24px;
+      font-weight: bold;
+      color: white;
+    }
+    .exit-corner::after {
+      content: "EXIT";
+      position: absolute;
+      bottom: 30px;
+      right: 30px;
+      animation: pulse 2s infinite;
     }
     .exit-instruction {
       position: fixed;
-      bottom: 20px; right: 20px;
-      background: rgba(255, 59, 48, 0.8);
+      bottom: 160px;
+      right: 20px;
+      background: rgba(255, 59, 48, 0.9);
       color: white;
       padding: 15px 20px;
       border-radius: 8px;
-      font-size: 14px;
+      font-size: 16px;
       font-weight: bold;
       animation: pulse 2s infinite;
     }
@@ -218,8 +233,7 @@
         <button class="btn btn-primary" onclick="createTrial()">Create Trial</button>
       </div>
     </div>
-    
-    <div id="page2" class="page">
+        <div id="page2" class="page">
       <div class="header"><h1 id="trialTitle">Data Collection</h1></div>
       <div style="padding: 20px;">
         <button class="btn btn-secondary" onclick="goToPage0()">← Back to List</button>
@@ -453,58 +467,293 @@
       div.appendChild(btn);
       document.getElementById('columnsList').appendChild(div);
     }
+        <div id="page2" class="page">
+      <div class="header"><h1 id="trialTitle">Data Collection</h1></div>
+      <div style="padding: 20px;">
+        <button class="btn btn-secondary" onclick="goToPage0()">← Back to List</button>
+        <div class="toggle-group" style="margin-top: 20px;">
+          <span>Announce Plot Changes</span>
+          <label class="switch">
+            <input type="checkbox" id="announceToggle" onchange="announceEnabled = this.checked">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="form-group">
+          <label>Cell Switching Speed</label>
+          <input type="range" id="speedSlider" min="0" max="500" value="30" step="10" oninput="updateSpeed(this.value)">
+          <div style="display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-top: 5px;">
+            <span>Instant</span>
+            <span id="speedValue">30ms</span>
+            <span>Slow</span>
+          </div>
+        </div>
+        <div class="controls">
+          <button class="btn btn-success" onclick="toggleListening()">Start Recording</button>
+          <button class="btn btn-secondary" onclick="toggleFieldMode()">Field Mode</button>
+          <button class="btn btn-secondary" onclick="showLegend()">Commands</button>
+          <button class="btn btn-primary" onclick="exportCSV()">Export CSV</button>
+        </div>
+        <div class="status" id="status">
+          <div class="current-plot" id="currentPlotDisplay">Plot: ---</div>
+          <div id="statusText">Press "Start Recording" to begin</div>
+        </div>
+        <div class="spreadsheet">
+          <table id="dataTable"></table>
+        </div>
+        <button class="btn btn-danger" onclick="deleteTrial()">Delete This Trial</button>
+        <button class="btn btn-secondary" onclick="goToPage0()">← Back to List</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="field-mode" id="fieldMode">
+    <div class="field-mode-info" id="fieldModeInfo">Plot 101</div>
+    <div class="exit-corner" id="exitCorner"></div>
+    <div class="exit-instruction">Double-tap bottom-right to exit</div>
+  </div>
+  
+  <div class="legend" id="legend">
+    <div class="legend-content">
+      <h2>Voice Commands</h2>
+      <div class="legend-item"><div class="legend-command">"Pause"</div><div>Pause listening</div></div>
+      <div class="legend-item"><div class="legend-command">"Resume"</div><div>Resume listening</div></div>
+      <div class="legend-item"><div class="legend-command">"Go to plot [number]"</div><div>Jump to plot</div></div>
+      <div class="legend-item"><div class="legend-command">"Where am I"</div><div>Announce current plot</div></div>
+      <div class="legend-item"><div class="legend-command">"Undo"</div><div>Go back one cell</div></div>
+      <div class="legend-item"><div class="legend-command">"Clear"</div><div>Clear current cell</div></div>
+      <div class="legend-item"><div class="legend-command">"Repeat"</div><div>Repeat last value</div></div>
+      <div class="legend-item"><div class="legend-command">[Number]</div><div>Record and advance</div></div>
+      <button class="btn btn-primary" onclick="hideLegend()">Close</button>
+    </div>
+  </div>
+
+  <script>
+    var currentTrialId = null;
+    var trialData = {};
+    var assessmentColumns = [];
+    var plots = [];
+    var currentRow = 0;
+    var currentCol = 0;
+    var isListening = false;
+    var recognition = null;
+    var lastValue = '';
+    var announceEnabled = false;
+    var audioContext = null;
+    var cellSwitchDelay = 30;
+    var lastTapTime = 0;
+    var saveTimeout = null;
     
-    function createTrial() {
-      var id = document.getElementById('trialId').value;
-      var date = document.getElementById('trialDate').value;
-      var name = document.getElementById('trialName').value;
-      var trt = parseInt(document.getElementById('numTreatments').value);
-      var rep = parseInt(document.getElementById('numReplicates').value);
-      var sub = parseInt(document.getElementById('numSubplots').value) || 0;
-      if (!id || !date || !name || !trt || !rep) {
+    loadTrialList();
+    
+    function showAutoSave() {
+      var ind = document.getElementById('autoSaveIndicator');
+      ind.classList.add('show');
+      setTimeout(function() { ind.classList.remove('show'); }, 1500);
+    }
+    
+    function saveCurrentTrial() {
+      if (!currentTrialId) return;
+      var trial = {
+        id: currentTrialId,
+        trialData: trialData,
+        assessmentColumns: assessmentColumns,
+        plots: plots,
+        currentRow: currentRow,
+        currentCol: currentCol,
+        lastModified: new Date().toISOString()
+      };
+      localStorage.setItem('trial_' + currentTrialId, JSON.stringify(trial));
+      showAutoSave();
+    }
+    
+    function debounceSave() {
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(saveCurrentTrial, 500);
+    }
+    
+    function loadTrialList() {
+      var list = document.getElementById('trialList');
+      list.innerHTML = '';
+      var trials = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var key = localStorage.key(i);
+        if (key.startsWith('trial_')) {
+          try {
+            trials.push(JSON.parse(localStorage.getItem(key)));
+          } catch(e) {}
+        }
+      }
+      trials.sort(function(a, b) { return new Date(b.lastModified) - new Date(a.lastModified); });
+      if (trials.length === 0) {
+        list.innerHTML = '<div class="empty-state">No assessments yet.<br>Click "+ New Assessment" to start.</div>';
+        return;
+      }
+      trials.forEach(function(trial) {
+        var item = document.createElement('div');
+        item.className = 'trial-list-item';
+        item.onclick = function() { loadTrial(trial.id); };
+        var name = document.createElement('div');
+        name.className = 'trial-item-name';
+        name.textContent = trial.trialData.trialName;
+        var details = document.createElement('div');
+        details.className = 'trial-item-details';
+        details.textContent = 'ID: ' + trial.trialData.trialId + ' | Date: ' + trial.trialData.trialDate;
+        item.appendChild(name);
+        item.appendChild(details);
+        list.appendChild(item);
+      });
+    }
+    
+    function loadTrial(id) {
+      var saved = localStorage.getItem('trial_' + id);
+      if (!saved) return;
+      try {
+        var trial = JSON.parse(saved);
+        currentTrialId = id;
+        trialData = trial.trialData;
+        assessmentColumns = trial.assessmentColumns;
+        plots = trial.plots;
+        currentRow = trial.currentRow || 0;
+        currentCol = trial.currentCol || 0;
+        renderTable();
+        document.getElementById('trialTitle').textContent = trialData.trialName;
+        updateCurrentCell();
+        goToPage2();
+      } catch(e) {
+        alert('Error loading trial');
+      }
+    }
+    
+    function deleteTrial() {
+      if (!currentTrialId) return;
+      if (!confirm('Delete this trial? Cannot be undone.')) return;
+      localStorage.removeItem('trial_' + currentTrialId);
+      currentTrialId = null;
+      goToPage0();
+    }
+    
+    function startNewTrial() {
+      currentTrialId = null;
+      document.getElementById('trialId').value = '';
+      document.getElementById('trialName').value = '';
+      document.getElementById('numTreatments').value = '';
+      document.getElementById('numReplicates').value = '';
+      document.getElementById('numSubplots').value = '';
+      document.getElementById('columnsList').innerHTML = '';
+      addColumn();
+      goToPage1();
+    }
+    
+    function initAudio() {
+      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioContext.state === 'suspended') audioContext.resume();
+    }
+    
+    function playBeep() {
+      try {
+        initAudio();
+        var osc = audioContext.createOscillator();
+        var gain = audioContext.createGain();
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.5, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+        osc.start(audioContext.currentTime);
+        osc.stop(audioContext.currentTime + 0.15);
+      } catch (e) {}
+    }
+    
+    function speak(text) {
+      if (!announceEnabled) return;
+      var wasListening = isListening;
+      if (wasListening && recognition) {
+        recognition.stop();
+        isListening = false;
+      }
+      var u = new SpeechSynthesisUtterance(text);
+      u.rate = 2.0;
+      u.volume = 0.8;
+      u.onend = function() {
+        if (wasListening) {
+          setTimeout(function() {
+            try {
+              isListening = true;
+              recognition.start();
+            } catch(e) {}
+          }, Math.max(cellSwitchDelay, 20));
+        }
+      };
+      speechSynthesis.speak(u);
+    }
+    
+    function addColumn() {
+      var div = document.createElement('div');
+      div.className = 'column-item';
+      var inp = document.createElement('input');
+      inp.type = 'text';
+      inp.placeholder = 'Column name';
+      var btn = document.createElement('button');
+      btn.className = 'delete-btn';
+      btn.innerHTML = '×';
+      btn.onclick = function() { div.remove(); };
+      div.appendChild(inp);
+      div.appendChild(btn);
+      document.getElementById('columnsList').appendChild(div);
+    }
+        function createTrial() {
+      var trialId = document.getElementById('trialId').value.trim();
+      var trialDate = document.getElementById('trialDate').value;
+      var trialName = document.getElementById('trialName').value.trim();
+      var numTreatments = parseInt(document.getElementById('numTreatments').value);
+      var numReplicates = parseInt(document.getElementById('numReplicates').value);
+      var numSubplots = parseInt(document.getElementById('numSubplots').value) || 0;
+      
+      if (!trialId || !trialDate || !trialName || !numTreatments || !numReplicates) {
         alert('Please fill all required fields');
         return;
       }
-      assessmentColumns = [];
+      
+      var cols = [];
       var inputs = document.querySelectorAll('#columnsList input');
-      for (var i = 0; i < inputs.length; i++) {
-        if (inputs[i].value.trim()) {
-          assessmentColumns.push(inputs[i].value.trim());
-        }
-      }
-      if (assessmentColumns.length === 0) {
+      inputs.forEach(function(inp) {
+        var val = inp.value.trim();
+        if (val) cols.push(val);
+      });
+      
+      if (cols.length === 0) {
         alert('Add at least one assessment column');
         return;
       }
-      currentTrialId = id + '_' + Date.now();
-      trialData = { trialId: id, trialDate: date, trialName: name, numTreatments: trt, numReplicates: rep, numSubplots: sub };
+      
+      currentTrialId = 'trial_' + Date.now();
+      trialData = { trialId: trialId, trialDate: trialDate, trialName: trialName, numTreatments: numTreatments, numReplicates: numReplicates, numSubplots: numSubplots };
+      assessmentColumns = cols;
       plots = [];
-      for (var r = 1; r <= rep; r++) {
-        for (var t = 1; t <= trt; t++) {
-          var plotNum = r * 100 + t;
-          if (sub > 0) {
-            for (var s = 1; s <= sub; s++) {
-              var p = { plot: plotNum, subplot: s, treatment: t, replicate: r, data: {} };
-              for (var c = 0; c < assessmentColumns.length; c++) {
-                p.data[assessmentColumns[c]] = '';
-              }
-              plots.push(p);
+      
+      var plotNum = 101;
+      for (var rep = 1; rep <= numReplicates; rep++) {
+        for (var trt = 1; trt <= numTreatments; trt++) {
+          if (numSubplots > 0) {
+            for (var sub = 1; sub <= numSubplots; sub++) {
+              var row = { plot: plotNum, treatment: trt, replicate: rep, subplot: sub, data: {} };
+              assessmentColumns.forEach(function(col) { row.data[col] = ''; });
+              plots.push(row);
             }
           } else {
-            var p = { plot: plotNum, subplot: null, treatment: t, replicate: r, data: {} };
-            for (var c = 0; c < assessmentColumns.length; c++) {
-              p.data[assessmentColumns[c]] = '';
-            }
-            plots.push(p);
+            var row = { plot: plotNum, treatment: trt, replicate: rep, data: {} };
+            assessmentColumns.forEach(function(col) { row.data[col] = ''; });
+            plots.push(row);
           }
+          plotNum++;
         }
       }
+      
       currentRow = 0;
       currentCol = 0;
-      saveCurrentTrial();
       renderTable();
-      document.getElementById('trialTitle').textContent = name;
-      updateCurrentCell();
+      document.getElementById('trialTitle').textContent = trialName;
+      saveCurrentTrial();
       goToPage2();
     }
     
@@ -512,122 +761,89 @@
       var table = document.getElementById('dataTable');
       table.innerHTML = '';
       var thead = document.createElement('thead');
-      var hrow = document.createElement('tr');
-      var headers = ['Plot'];
+      var headerRow = document.createElement('tr');
+      var headers = ['Plot', 'Treatment', 'Replicate'];
       if (trialData.numSubplots > 0) headers.push('Subplot');
       headers = headers.concat(assessmentColumns);
-      for (var i = 0; i < headers.length; i++) {
+      headers.forEach(function(h) {
         var th = document.createElement('th');
-        th.textContent = headers[i];
-        hrow.appendChild(th);
-      }
-      thead.appendChild(hrow);
+        th.textContent = h;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
       table.appendChild(thead);
+      
       var tbody = document.createElement('tbody');
-      for (var i = 0; i < plots.length; i++) {
-        var row = document.createElement('tr');
-        var pc = document.createElement('td');
-        pc.textContent = plots[i].plot;
-        row.appendChild(pc);
+      plots.forEach(function(plot, rowIdx) {
+        var tr = document.createElement('tr');
+        var plotCell = document.createElement('td');
+        plotCell.textContent = plot.plot;
+        tr.appendChild(plotCell);
+        var trtCell = document.createElement('td');
+        trtCell.textContent = plot.treatment;
+        tr.appendChild(trtCell);
+        var repCell = document.createElement('td');
+        repCell.textContent = plot.replicate;
+        tr.appendChild(repCell);
         if (trialData.numSubplots > 0) {
-          var sc = document.createElement('td');
-          sc.textContent = plots[i].subplot;
-          row.appendChild(sc);
+          var subCell = document.createElement('td');
+          subCell.textContent = plot.subplot;
+          tr.appendChild(subCell);
         }
-        for (var j = 0; j < assessmentColumns.length; j++) {
-          var cell = document.createElement('td');
-          var inp = document.createElement('input');
-          inp.type = 'number';
-          inp.value = plots[i].data[assessmentColumns[j]];
-          inp.dataset.row = i;
-          inp.dataset.col = assessmentColumns[j];
-          inp.oninput = function(e) {
-            plots[this.dataset.row].data[this.dataset.col] = this.value;
-            debounceSave();
-          };
-          cell.appendChild(inp);
-          row.appendChild(cell);
-        }
-        tbody.appendChild(row);
-      }
+        assessmentColumns.forEach(function(col, colIdx) {
+          var td = document.createElement('td');
+          if (rowIdx === currentRow && colIdx === currentCol) td.className = 'current-cell';
+          td.textContent = plot.data[col] || '';
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
       table.appendChild(tbody);
     }
     
     function updateCurrentCell() {
-      var tds = document.querySelectorAll('td');
-      for (var i = 0; i < tds.length; i++) tds[i].classList.remove('current-cell');
-      var offset = trialData.numSubplots > 0 ? 2 : 1;
-      var rows = document.querySelectorAll('#dataTable tbody tr');
-      if (rows[currentRow]) {
-        var cells = rows[currentRow].querySelectorAll('td');
-        if (cells[currentCol + offset]) {
-          cells[currentCol + offset].classList.add('current-cell');
-          cells[currentCol + offset].scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+      if (currentRow >= plots.length) {
+        currentRow = plots.length - 1;
+        currentCol = assessmentColumns.length - 1;
       }
-      var cp = plots[currentRow];
-      var cc = assessmentColumns[currentCol];
-      var disp = trialData.numSubplots > 0 ? 'Plot ' + cp.plot + ' | ' + cp.subplot : 'Plot ' + cp.plot;
-      document.getElementById('currentPlotDisplay').textContent = disp;
-      document.getElementById('fieldModeInfo').textContent = disp + '\n' + cc;
+      if (currentRow < 0) currentRow = 0;
+      if (currentCol < 0) currentCol = 0;
+      if (currentCol >= assessmentColumns.length) currentCol = assessmentColumns.length - 1;
+      
+      renderTable();
+      document.getElementById('currentPlotDisplay').textContent = 'Plot: ' + plots[currentRow].plot + ' | ' + assessmentColumns[currentCol];
+      document.getElementById('fieldModeInfo').textContent = 'Plot ' + plots[currentRow].plot;
+      
+      var table = document.getElementById('dataTable');
+      var cell = table.rows[currentRow + 1].cells[3 + (trialData.numSubplots > 0 ? 1 : 0) + currentCol];
+      if (cell) cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
     
     function advanceCell() {
-      var prevPlot = plots[currentRow] ? plots[currentRow].plot : null;
-      currentCol++;
-      if (currentCol >= assessmentColumns.length) {
-        currentCol = 0;
-        currentRow++;
-        if (currentRow >= plots.length) {
-          currentRow = plots.length - 1;
-          speak('Trial complete');
-          stopListening();
-          return;
-        }
-      }
       playBeep();
-      updateCurrentCell();
-      debounceSave();
-      var cp = plots[currentRow];
-      if (announceEnabled && prevPlot !== cp.plot) {
-        speak(cp.plot.toString());
-      }
-    }
-    
-    function setupSpeechRecognition() {
-      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        alert('Speech not supported');
-        return false;
-      }
-      var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognition = new SR();
-      recognition.continuous = true;
-      recognition.interimResults = false;
-      recognition.lang = 'en-US';
-      recognition.maxAlternatives = 1;
-      recognition.onresult = function(e) {
-        for (var i = e.resultIndex; i < e.results.length; i++) {
-          if (e.results[i].isFinal) {
-            handleVoiceCommand(e.results[i][0].transcript.trim().toLowerCase());
+      setTimeout(function() {
+        currentCol++;
+        if (currentCol >= assessmentColumns.length) {
+          currentCol = 0;
+          currentRow++;
+          if (currentRow >= plots.length) {
+            currentRow = plots.length - 1;
+            currentCol = assessmentColumns.length - 1;
+            speak('End of trial');
+            return;
           }
+          if (announceEnabled) speak('Plot ' + plots[currentRow].plot);
         }
-      };
-      recognition.onerror = function(e) {
-        if (e.error === 'not-allowed') {
-          alert('Microphone denied');
-          isListening = false;
-        }
-      };
-      recognition.onend = function() {
-        if (isListening) {
-          try { recognition.start(); } catch(e) {}
-        }
-      };
-      return true;
+        updateCurrentCell();
+        debounceSave();
+      }, cellSwitchDelay);
     }
     
     function handleVoiceCommand(text) {
       if (!text) return;
+      
+      document.getElementById('statusText').textContent = 'Heard: "' + text + '"';
+      
       if (text.includes('pause') || text.includes('stop')) { pauseListening(); return; }
       if (text.includes('resume') || text.includes('continue')) { resumeListening(); return; }
       if (text.includes('where')) { speak('Plot ' + plots[currentRow].plot); return; }
@@ -666,127 +882,171 @@
         if (lastValue) speak(lastValue);
         return;
       }
-      var num = text.match(/(\d+\.?\d*)/);
+      
+      var numberWords = {
+        'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
+        'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9',
+        'ten': '10', 'eleven': '11', 'twelve': '12', 'thirteen': '13',
+        'fourteen': '14', 'fifteen': '15', 'sixteen': '16', 'seventeen': '17',
+        'eighteen': '18', 'nineteen': '19', 'twenty': '20', 'thirty': '30',
+        'forty': '40', 'fifty': '50', 'sixty': '60', 'seventy': '70',
+        'eighty': '80', 'ninety': '90', 'hundred': '100'
+      };
+      
+      var processedText = text;
+      for (var word in numberWords) {
+        processedText = processedText.replace(new RegExp(word, 'g'), numberWords[word]);
+      }
+      
+      var num = processedText.match(/(\d+\.?\d*)/);
+      
       if (num) {
         var value = num[1];
         plots[currentRow].data[assessmentColumns[currentCol]] = value;
         lastValue = value;
         renderTable();
         advanceCell();
+      } else {
+        document.getElementById('statusText').textContent = 'Not recognized: "' + text + '"';
       }
     }
     
     function toggleListening() {
-      if (isListening) stopListening();
-      else startListening();
+      if (isListening) {
+        stopListening();
+      } else {
+        startListening();
+      }
     }
     
     function startListening() {
-      if (!recognition && !setupSpeechRecognition()) return;
       initAudio();
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert('Speech recognition not supported');
+        return;
+      }
+      var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+      
+      recognition.onresult = function(event) {
+        var last = event.results.length - 1;
+        var text = event.results[last][0].transcript.toLowerCase().trim();
+        handleVoiceCommand(text);
+      };
+      
+      recognition.onerror = function(event) {
+        if (event.error === 'no-speech' || event.error === 'audio-capture') return;
+        document.getElementById('statusText').textContent = 'Error: ' + event.error;
+      };
+      
+      recognition.onend = function() {
+        if (isListening) {
+          try { recognition.start(); } catch(e) {}
+        }
+      };
+      
       try {
-        isListening = true;
         recognition.start();
+        isListening = true;
         document.getElementById('status').classList.add('listening');
         document.getElementById('statusText').textContent = 'Listening...';
-        if (plots[currentRow] && announceEnabled) {
-          speak(plots[currentRow].plot.toString());
-        }
-      } catch(e) {}
+        document.querySelector('.controls button').textContent = 'Stop Recording';
+        document.querySelector('.controls button').className = 'btn btn-danger';
+      } catch(e) {
+        alert('Could not start: ' + e.message);
+      }
+    }
+    
+    function stopListening() {
+      if (recognition) recognition.stop();
+      isListening = false;
+      document.getElementById('status').classList.remove('listening');
+      document.getElementById('statusText').textContent = 'Stopped';
+      document.querySelector('.controls button').textContent = 'Start Recording';
+      document.querySelector('.controls button').className = 'btn btn-success';
     }
     
     function pauseListening() {
-      isListening = false;
       if (recognition) recognition.stop();
+      isListening = false;
       document.getElementById('status').classList.remove('listening');
-      document.getElementById('statusText').textContent = 'Paused';
+      document.getElementById('statusText').textContent = 'Paused (say "resume")';
     }
     
-    function resumeListening() { startListening(); }
-    
-    function stopListening() {
-      isListening = false;
-      if (recognition) recognition.stop();
-      document.getElementById('status').classList.remove('listening');
-      document.getElementById('statusText').textContent = 'Stopped';
+    function resumeListening() {
+      if (recognition) {
+        try {
+          recognition.start();
+          isListening = true;
+          document.getElementById('status').classList.add('listening');
+          document.getElementById('statusText').textContent = 'Listening...';
+        } catch(e) {}
+      }
     }
     
     function toggleFieldMode() {
-      document.getElementById('fieldMode').classList.toggle('active');
+      var fm = document.getElementById('fieldMode');
+      fm.classList.toggle('active');
+      if (fm.classList.contains('active')) {
+        document.getElementById('fieldModeInfo').textContent = 'Plot ' + plots[currentRow].plot;
+        if (!isListening) startListening();
+      }
     }
     
-    window.addEventListener('load', function() {
-      var exitCorner = document.getElementById('exitCorner');
-      exitCorner.addEventListener('touchend', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        var currentTime = new Date().getTime();
-        var tapLength = currentTime - lastTapTime;
-        if (tapLength < 300 && tapLength > 0) {
-          toggleFieldMode();
-          lastTapTime = 0;
-        } else {
-          lastTapTime = currentTime;
-        }
-      }, { passive: false });
-      document.getElementById('trialDate').valueAsDate = new Date();
+    document.getElementById('exitCorner').addEventListener('click', function(e) {
+      var now = Date.now();
+      if (now - lastTapTime < 300) {
+        document.getElementById('fieldMode').classList.remove('active');
+      }
+      lastTapTime = now;
     });
     
     function showLegend() { document.getElementById('legend').classList.add('active'); }
     function hideLegend() { document.getElementById('legend').classList.remove('active'); }
     
+    function updateSpeed(val) {
+      cellSwitchDelay = parseInt(val);
+      document.getElementById('speedValue').textContent = val + 'ms';
+    }
+    
+    function exportCSV() {
+      var csv = 'Plot,Treatment,Replicate';
+      if (trialData.numSubplots > 0) csv += ',Subplot';
+      csv += ',' + assessmentColumns.join(',') + '\n';
+      plots.forEach(function(plot) {
+        var row = [plot.plot, plot.treatment, plot.replicate];
+        if (trialData.numSubplots > 0) row.push(plot.subplot);
+        assessmentColumns.forEach(function(col) { row.push(plot.data[col] || ''); });
+        csv += row.join(',') + '\n';
+      });
+      var blob = new Blob([csv], { type: 'text/csv' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = trialData.trialName.replace(/[^a-z0-9]/gi, '_') + '_' + trialData.trialDate + '.csv';
+      a.click();
+    }
+    
     function goToPage0() {
-      document.getElementById('page2').classList.remove('active');
-      document.getElementById('page1').classList.remove('active');
-      document.getElementById('page0').classList.add('active');
-      stopListening();
       loadTrialList();
+      document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+      document.getElementById('page0').classList.add('active');
+      if (isListening) stopListening();
     }
     
     function goToPage1() {
-      document.getElementById('page0').classList.remove('active');
-      document.getElementById('page2').classList.remove('active');
+      document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
       document.getElementById('page1').classList.add('active');
       document.getElementById('trialDate').valueAsDate = new Date();
     }
     
     function goToPage2() {
-      document.getElementById('page0').classList.remove('active');
-      document.getElementById('page1').classList.remove('active');
+      document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
       document.getElementById('page2').classList.add('active');
-    }
-    
-    function updateSpeed(v) {
-      cellSwitchDelay = parseInt(v);
-      document.getElementById('speedValue').textContent = v + 'ms';
-    }
-    
-    function exportCSV() {
-      var csv = 'Trial ID:,' + trialData.trialId + '\n';
-      csv += 'Trial Name:,' + trialData.trialName + '\n';
-      csv += 'Date:,' + trialData.trialDate + '\n';
-      csv += 'Treatments:,' + trialData.numTreatments + '\n';
-      csv += 'Replicates:,' + trialData.numReplicates + '\n';
-      if (trialData.numSubplots > 0) csv += 'Subplots:,' + trialData.numSubplots + '\n';
-      csv += '\n';
-      var h = ['Plot'];
-      if (trialData.numSubplots > 0) h.push('Subplot');
-      csv += h.concat(assessmentColumns).join(',') + '\n';
-      for (var i = 0; i < plots.length; i++) {
-        var row = [plots[i].plot];
-        if (trialData.numSubplots > 0) row.push(plots[i].subplot);
-        for (var j = 0; j < assessmentColumns.length; j++) {
-          row.push(plots[i].data[assessmentColumns[j]] || '');
-        }
-        csv += row.join(',') + '\n';
-      }
-      var blob = new Blob([csv], { type: 'text/csv' });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = trialData.trialName + '_' + trialData.trialDate + '.csv';
-      a.click();
-      URL.revokeObjectURL(url);
+      document.getElementById('announceToggle').checked = announceEnabled;
     }
   </script>
 </body>
