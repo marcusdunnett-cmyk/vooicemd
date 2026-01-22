@@ -19,7 +19,7 @@
     }
     
     .container {
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 0 auto;
       background: white;
       border-radius: 15px;
@@ -183,8 +183,7 @@
       font-weight: 600;
       color: #374151;
     }
-    
-    .table-container {
+        .table-container {
       overflow-x: auto;
       margin-top: 20px;
       border-radius: 8px;
@@ -344,6 +343,28 @@
       background: #fce7f3;
       color: #be185d;
     }
+
+    .assessment-inputs {
+      background: #f0f9ff;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+
+    .assessment-input-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+
+    .assessment-input-row input {
+      flex: 1;
+    }
+
+    .assessment-input-row button {
+      padding: 8px 12px;
+    }
     
     @media (max-width: 768px) {
       .header h1 {
@@ -377,21 +398,31 @@
       </div>
       
       <div class="form-group">
-        <label>🌾 Crop</label>
-        <select id="crop">
-          <option value="">Select Crop</option>
-          <option value="Corn">Corn</option>
-          <option value="Soybean">Soybean</option>
-          <option value="Wheat">Wheat</option>
-          <option value="Cotton">Cotton</option>
-          <option value="Rice">Rice</option>
-          <option value="Canola">Canola</option>
-        </select>
+        <label>🧪 Number of Treatments</label>
+        <input type="number" id="numTreatments" min="1" max="50" value="4">
+      </div>
+
+      <div class="form-group">
+        <label>🔁 Number of Reps</label>
+        <input type="number" id="numReps" min="1" max="20" value="3">
       </div>
       
       <div class="form-group">
-        <label>📊 Number of Plots</label>
-        <input type="number" id="numPlots" min="1" max="100" value="10">
+        <label>📊 Number of Subplots per Rep</label>
+        <input type="number" id="numSubplots" min="1" max="50" value="5">
+      </div>
+
+      <div class="form-group">
+        <label>📈 Assessment Columns</label>
+        <div class="assessment-inputs" id="assessmentInputs">
+          <div class="assessment-input-row">
+            <input type="text" placeholder="Assessment name (e.g., Height)" value="Assessment 1">
+            <button class="btn btn-danger" onclick="removeAssessment(this)">✕</button>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="addAssessment()" style="margin-top: 10px;">
+          ➕ Add Assessment Column
+        </button>
       </div>
       
       <div style="text-align: center; margin-top: 30px;">
@@ -446,29 +477,26 @@
       <!-- CONTROLS -->
       <div class="controls">
         <button class="btn btn-success" id="startBtn" onclick="startListening()">
-          🎤 Start Voice Input
+          🎤 Start Voice
         </button>
-        <button class="btn btn-danger" id="stopBtn" onclick="stopListening()" style="display: none;">
-          ⏹️ Stop Voice Input
+        <button class="btn btn-danger" id="stopBtn" onclick="stopListening()" disabled>
+          ⏹️ Stop Voice
         </button>
-        <button class="btn btn-warning" onclick="toggleLegend()">
-          ❓ Voice Commands
+        <button class="btn btn-warning" onclick="undoLastEntry()">
+          ↩️ Undo Last
         </button>
         <button class="btn btn-primary" onclick="exportToCSV()">
           💾 Export CSV
+        </button>
+        <button class="btn btn-secondary" onclick="toggleLegend()">
+          ❓ Help
         </button>
       </div>
 
       <!-- DATA TABLE -->
       <div class="table-container">
         <table id="dataTable">
-          <thead>
-            <tr>
-              <th>Plot</th>
-              <th>Rating</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
+          <thead id="tableHeader"></thead>
           <tbody id="tableBody"></tbody>
         </table>
       </div>
@@ -477,137 +505,135 @@
 
   <!-- LEGEND -->
   <div class="legend" id="legend">
-    <h3>🎤 Voice Commands</h3>
+    <h3>📖 Voice Commands Guide</h3>
     <div class="legend-item">
-      <strong>Single Cell Mode:</strong><br>
-      Say a number → Auto-advances to next cell
+      <strong>Numbers:</strong> Say any number (e.g., "5", "twenty three")
     </div>
     <div class="legend-item">
-      <strong>Batch Mode:</strong><br>
-      Say multiple numbers: "5, 10, 15, 20"<br>
-      Fills consecutive cells automatically
+      <strong>Skip:</strong> Say "skip" or "next" to move to next cell
     </div>
     <div class="legend-item">
-      <strong>Accepted Numbers:</strong><br>
-      <span id="acceptedNumbers">All numbers (0-100)</span>
+      <strong>Delete:</strong> Say "delete" or "clear" to empty current cell
     </div>
     <div class="legend-item">
-      <strong>Navigation:</strong><br>
-      "Next" or "Skip" → Move to next cell<br>
-      "Previous" or "Back" → Move to previous cell
+      <strong>Batch Mode:</strong> Enable to record multiple numbers continuously
     </div>
     <div class="legend-item">
-      <strong>Special Commands:</strong><br>
-      "Clear" → Clear current cell<br>
-      "Pause" → Stop batch recording
-    </div>
-    <div style="text-align: center; margin-top: 15px;">
-      <button class="btn btn-secondary" onclick="toggleLegend()">Close</button>
+      <strong>Multiples of 5:</strong> Rounds all numbers to nearest 5
     </div>
   </div>
-    <script>
-    // ============================================
-    // STATE MANAGEMENT
-    // ============================================
+
+  <script>
+        // ==================== GLOBAL STATE ====================
     let currentTrial = null;
     let recognition = null;
     let isListening = false;
-    let currentCellIndex = 0;
-    let isBatchMode = false;
-    let multiplesOf5Only = false;
-    let audioContext = null;
-    
-    // ============================================
-    // INITIALIZATION
-    // ============================================
-    document.addEventListener('DOMContentLoaded', function() {
+    let currentRow = 0;
+    let currentCol = 1; // Start at first assessment column (skip Subplot column)
+    let batchMode = false;
+    let multiplesOf5 = false;
+    let undoStack = [];
+    let assessmentColumns = ['Assessment 1'];
+
+    // ==================== INITIALIZATION ====================
+    function initApp() {
       loadTrials();
-      initAudioContext();
-      updateAcceptedNumbersDisplay();
-    });
-    
-    function initAudioContext() {
-      try {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      } catch (e) {
-        console.warn('Audio context not available');
+      setupSpeechRecognition();
+    }
+
+    function setupSpeechRecognition() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert('Speech recognition not supported in this browser. Please use Chrome, Edge, or Safari.');
+        return;
+      }
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = handleSpeechResult;
+      recognition.onerror = handleSpeechError;
+      recognition.onend = handleSpeechEnd;
+    }
+
+    // ==================== ASSESSMENT COLUMN MANAGEMENT ====================
+    function addAssessment() {
+      const container = document.getElementById('assessmentInputs');
+      const count = container.children.length + 1;
+      const row = document.createElement('div');
+      row.className = 'assessment-input-row';
+      row.innerHTML = `
+        <input type="text" placeholder="Assessment name" value="Assessment ${count}">
+        <button class="btn btn-danger" onclick="removeAssessment(this)">✕</button>
+      `;
+      container.appendChild(row);
+    }
+
+    function removeAssessment(btn) {
+      const container = document.getElementById('assessmentInputs');
+      if (container.children.length > 1) {
+        btn.parentElement.remove();
+      } else {
+        alert('You must have at least one assessment column!');
       }
     }
-    
-    // ============================================
-    // AUDIO FEEDBACK
-    // ============================================
-    function playBeep(frequency = 800, duration = 100) {
-      if (!audioContext) return;
-      
-      try {
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.value = frequency;
-        oscillator.type = 'sine';
-        
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + duration / 1000);
-      } catch (e) {
-        console.warn('Beep failed:', e);
-      }
+
+    function getAssessmentColumns() {
+      const inputs = document.querySelectorAll('#assessmentInputs input');
+      return Array.from(inputs).map(input => input.value.trim() || 'Assessment');
     }
-    
-    // ============================================
-    // TRIAL MANAGEMENT
-    // ============================================
+
+    // ==================== TRIAL MANAGEMENT ====================
     function createTrial() {
       const trialCode = document.getElementById('trialCode').value.trim();
-      const crop = document.getElementById('crop').value;
-      const numPlots = parseInt(document.getElementById('numPlots').value);
-      
+      const numTreatments = parseInt(document.getElementById('numTreatments').value);
+      const numReps = parseInt(document.getElementById('numReps').value);
+      const numSubplots = parseInt(document.getElementById('numSubplots').value);
+
       if (!trialCode) {
         alert('Please enter a trial code');
         return;
       }
-      
-      if (!crop) {
-        alert('Please select a crop');
-        return;
-      }
-      
-      if (numPlots < 1 || numPlots > 100) {
-        alert('Number of plots must be between 1 and 100');
-        return;
-      }
-      
+
+      assessmentColumns = getAssessmentColumns();
+
       const trial = {
-        id: Date.now(),
         code: trialCode,
-        crop: crop,
-        numPlots: numPlots,
-        createdAt: new Date().toISOString(),
-        data: []
+        numTreatments,
+        numReps,
+        numSubplots,
+        assessmentColumns: assessmentColumns,
+        data: [],
+        created: new Date().toISOString()
       };
-      
-      // Initialize empty data
-      for (let i = 0; i < numPlots; i++) {
-        trial.data.push({
-          plot: i + 1,
-          rating: '',
-          notes: ''
-        });
+
+      // Generate data structure
+      for (let t = 1; t <= numTreatments; t++) {
+        for (let r = 1; r <= numReps; r++) {
+          for (let s = 1; s <= numSubplots; s++) {
+            const row = {
+              treatment: t,
+              rep: r,
+              subplot: s
+            };
+            // Initialize assessment columns
+            assessmentColumns.forEach(col => {
+              row[col] = '';
+            });
+            trial.data.push(row);
+          }
+        }
       }
-      
+
       saveTrialToStorage(trial);
       loadTrial(trial);
     }
-    
+
     function saveTrialToStorage(trial) {
       let trials = JSON.parse(localStorage.getItem('voiceMD_trials') || '[]');
-      const existingIndex = trials.findIndex(t => t.id === trial.id);
+      const existingIndex = trials.findIndex(t => t.code === trial.code);
       
       if (existingIndex >= 0) {
         trials[existingIndex] = trial;
@@ -618,440 +644,373 @@
       localStorage.setItem('voiceMD_trials', JSON.stringify(trials));
       loadTrials();
     }
-    
+
     function loadTrials() {
       const trials = JSON.parse(localStorage.getItem('voiceMD_trials') || '[]');
-      const trialList = document.getElementById('trialList');
+      const container = document.getElementById('trialList');
       
       if (trials.length === 0) {
-        trialList.innerHTML = '<p style="text-align: center; color: #9ca3af; margin-top: 30px;">No trials yet. Create your first trial above!</p>';
+        container.innerHTML = '<p style="text-align: center; color: #9ca3af; padding: 40px;">No trials yet. Create your first trial above!</p>';
         return;
       }
-      
-      trialList.innerHTML = trials.map(trial => `
-        <div class="trial-card" onclick="loadTrialById(${trial.id})">
+
+      container.innerHTML = trials.map(trial => `
+        <div class="trial-card" onclick='loadTrialByCode("${trial.code}")'>
           <h3>${trial.code}</h3>
-          <p><strong>Crop:</strong> ${trial.crop}</p>
-          <p><strong>Plots:</strong> ${trial.numPlots}</p>
-          <p><strong>Created:</strong> ${new Date(trial.createdAt).toLocaleDateString()}</p>
-          <button class="btn btn-danger" style="margin-top: 10px; width: 100%;" onclick="event.stopPropagation(); deleteTrial(${trial.id})">
-            🗑️ Delete
-          </button>
+          <p>🧪 ${trial.numTreatments} treatments × ${trial.numReps} reps</p>
+          <p>📊 ${trial.numSubplots} subplots per rep</p>
+          <p>📈 ${trial.assessmentColumns.length} assessments</p>
+          <p style="font-size: 12px; color: #9ca3af;">Created: ${new Date(trial.created).toLocaleDateString()}</p>
         </div>
       `).join('');
     }
-    
-    function loadTrialById(id) {
+
+    function loadTrialByCode(code) {
       const trials = JSON.parse(localStorage.getItem('voiceMD_trials') || '[]');
-      const trial = trials.find(t => t.id === id);
-      if (trial) {
-        loadTrial(trial);
-      }
+      const trial = trials.find(t => t.code === code);
+      if (trial) loadTrial(trial);
     }
-    
+
     function loadTrial(trial) {
       currentTrial = trial;
-      document.getElementById('currentTrialName').textContent = `${trial.code} - ${trial.crop}`;
+      assessmentColumns = trial.assessmentColumns;
+      document.getElementById('currentTrialName').textContent = trial.code;
       
-      // Build table
-      const tbody = document.getElementById('tableBody');
-      tbody.innerHTML = trial.data.map((row, index) => `
-        <tr>
-          <td>${row.plot}</td>
-          <td contenteditable="true" data-index="${index}" data-field="rating" 
-              onclick="selectCell(${index}, 'rating')"
-              onblur="saveCell(${index}, 'rating', this.textContent)">${row.rating}</td>
-          <td contenteditable="true" data-index="${index}" data-field="notes"
-              onclick="selectCell(${index}, 'notes')"
-              onblur="saveCell(${index}, 'notes', this.textContent)">${row.notes}</td>
-        </tr>
-      `).join('');
+      renderTable();
       
-      // Switch to data page
       document.getElementById('startupPage').classList.remove('active');
       document.getElementById('dataPage').classList.add('active');
       
-      // Reset state
-      currentCellIndex = 0;
+      currentRow = 0;
+      currentCol = 1; // Start at first assessment column
       highlightCurrentCell();
     }
-    
-    function deleteTrial(id) {
-      if (!confirm('Are you sure you want to delete this trial?')) return;
-      
-      let trials = JSON.parse(localStorage.getItem('voiceMD_trials') || '[]');
-      trials = trials.filter(t => t.id !== id);
-      localStorage.setItem('voiceMD_trials', JSON.stringify(trials));
-      loadTrials();
-    }
-    
+
     function backToStartup() {
-      if (isListening) {
-        stopListening();
+      if (currentTrial) {
+        saveTrialToStorage(currentTrial);
       }
       
       document.getElementById('dataPage').classList.remove('active');
       document.getElementById('startupPage').classList.add('active');
-      currentTrial = null;
-    }
-    
-    // ============================================
-    // CELL MANAGEMENT
-    // ============================================
-    function selectCell(index, field) {
-      currentCellIndex = index;
-      highlightCurrentCell();
-    }
-    
-    function saveCell(index, field, value) {
-      if (!currentTrial) return;
-      currentTrial.data[index][field] = value.trim();
-      saveTrialToStorage(currentTrial);
-    }
-    
-    function highlightCurrentCell() {
-      // Remove all highlights
-      document.querySelectorAll('.current-cell').forEach(cell => {
-        cell.classList.remove('current-cell');
-      });
       
-      // Highlight current cell (rating column)
-      const cell = document.querySelector(`td[data-index="${currentCellIndex}"][data-field="rating"]`);
+      if (isListening) stopListening();
+    }
+
+    // ==================== TABLE RENDERING ====================
+    function renderTable() {
+      const headerRow = document.getElementById('tableHeader');
+      const tbody = document.getElementById('tableBody');
+
+      // Create header with Subplot + Assessment columns
+      headerRow.innerHTML = `
+        <tr>
+          <th>Subplot</th>
+          ${assessmentColumns.map(col => `<th>${col}</th>`).join('')}
+        </tr>
+      `;
+
+      // Create data rows
+      tbody.innerHTML = currentTrial.data.map((row, idx) => `
+        <tr data-row="${idx}">
+          <td>${row.subplot}</td>
+          ${assessmentColumns.map((col, colIdx) => `
+            <td contenteditable="true" 
+                data-row="${idx}" 
+                data-col="${colIdx + 1}"
+                onblur="updateCellManually(${idx}, ${colIdx + 1}, this.textContent)"
+                onclick="selectCell(${idx}, ${colIdx + 1})">
+              ${row[col] || ''}
+            </td>
+          `).join('')}
+        </tr>
+      `).join('');
+    }
+
+    function highlightCurrentCell() {
+      document.querySelectorAll('td').forEach(td => td.classList.remove('current-cell'));
+      
+      const cell = document.querySelector(`td[data-row="${currentRow}"][data-col="${currentCol}"]`);
       if (cell) {
         cell.classList.add('current-cell');
         cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }
-    
-    function moveToNextCell() {
-      if (!currentTrial) return;
-      
-      if (currentCellIndex < currentTrial.data.length - 1) {
-        currentCellIndex++;
-        highlightCurrentCell();
-        playBeep(900, 80);
-        return true;
-      } else {
-        updateStatus('✅ All plots completed!');
-        playBeep(1200, 150);
-        return false;
-      }
+
+    function selectCell(row, col) {
+      currentRow = row;
+      currentCol = col;
+      highlightCurrentCell();
     }
-    
-    function moveToPreviousCell() {
-      if (currentCellIndex > 0) {
-        currentCellIndex--;
-        highlightCurrentCell();
-        playBeep(700, 80);
-      }
+
+    function updateCellManually(row, col, value) {
+      const colName = assessmentColumns[col - 1];
+      currentTrial.data[row][colName] = value;
+      saveTrialToStorage(currentTrial);
     }
-    
-    function clearCurrentCell() {
-      const cell = document.querySelector(`td[data-index="${currentCellIndex}"][data-field="rating"]`);
-      if (cell) {
-        cell.textContent = '';
-        saveCell(currentCellIndex, 'rating', '');
-        playBeep(600, 100);
-      }
-    }
-          // ============================================
-    // VOICE RECOGNITION
-    // ============================================
+
+    // ==================== VOICE RECOGNITION ====================
     function startListening() {
-      if (!currentTrial) {
-        alert('Please load a trial first');
+      if (!recognition) {
+        alert('Speech recognition not available');
         return;
       }
-      
-      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        alert('Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.');
-        return;
-      }
-      
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognition = new SpeechRecognition();
-      
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
-      
-      recognition.onstart = function() {
-        isListening = true;
-        document.getElementById('startBtn').style.display = 'none';
-        document.getElementById('stopBtn').style.display = 'inline-block';
-        document.getElementById('status').classList.add('listening');
-        updateStatus('🎤 Listening... Speak now');
-        playBeep(1000, 100);
-      };
-      
-      recognition.onresult = function(event) {
-        let interimTranscript = '';
-        let finalTranscript = '';
-        
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript;
-          } else {
-            interimTranscript += transcript;
-          }
-        }
-        
-        // Display interim results
-        if (interimTranscript) {
-          document.getElementById('transcriptDisplay').textContent = `Hearing: "${interimTranscript}"`;
-        }
-        
-        // Process final results
-        if (finalTranscript) {
-          processVoiceCommand(finalTranscript.trim());
-          document.getElementById('transcriptDisplay').textContent = '';
-        }
-      };
-      
-      recognition.onerror = function(event) {
-        console.error('Speech recognition error:', event.error);
-        if (event.error === 'no-speech') {
-          updateStatus('No speech detected. Try again.');
-        } else if (event.error === 'not-allowed') {
-          alert('Microphone access denied. Please allow microphone access and try again.');
-          stopListening();
-        } else {
-          updateStatus(`Error: ${event.error}`);
-        }
-      };
-      
-      recognition.onend = function() {
-        if (isListening) {
-          recognition.start(); // Auto-restart
-        }
-      };
-      
+
       recognition.start();
+      isListening = true;
+      
+      document.getElementById('startBtn').disabled = true;
+      document.getElementById('stopBtn').disabled = false;
+      document.getElementById('status').classList.add('listening');
+      document.getElementById('statusText').textContent = batchMode ? 
+        '🎤 Listening (Batch Mode - say numbers continuously)' : 
+        '🎤 Listening (Single Cell Mode)';
     }
-    
+
     function stopListening() {
       if (recognition) {
-        isListening = false;
         recognition.stop();
-        recognition = null;
       }
+      isListening = false;
       
-      document.getElementById('startBtn').style.display = 'inline-block';
-      document.getElementById('stopBtn').style.display = 'none';
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('stopBtn').disabled = true;
       document.getElementById('status').classList.remove('listening');
-      updateStatus('Voice input stopped');
-      document.getElementById('transcriptDisplay').textContent = '';
+      document.getElementById('statusText').textContent = 'Stopped';
     }
-    
-    function processVoiceCommand(transcript) {
-      const lowerTranscript = transcript.toLowerCase();
-      
-      // Navigation commands
-      if (lowerTranscript.includes('next') || lowerTranscript.includes('skip')) {
+
+    function handleSpeechResult(event) {
+      const transcript = Array.from(event.results)
+        .map(result => result[0].transcript)
+        .join('');
+
+      document.getElementById('transcriptDisplay').textContent = `Heard: "${transcript}"`;
+
+      // Only process final results
+      if (event.results[event.results.length - 1].isFinal) {
+        processVoiceCommand(transcript.toLowerCase().trim());
+      }
+    }
+
+    function handleSpeechError(event) {
+      console.error('Speech recognition error:', event.error);
+      if (event.error === 'no-speech') {
+        document.getElementById('statusText').textContent = 'No speech detected. Try again.';
+      }
+    }
+
+    function handleSpeechEnd() {
+      if (isListening) {
+        recognition.start(); // Restart if still in listening mode
+      }
+    }
+
+    function processVoiceCommand(text) {
+      // Handle skip/next commands
+      if (text.includes('skip') || text.includes('next')) {
         moveToNextCell();
-        updateStatus(`Moved to plot ${currentCellIndex + 1}`);
         return;
       }
-      
-      if (lowerTranscript.includes('previous') || lowerTranscript.includes('back')) {
-        moveToPreviousCell();
-        updateStatus(`Moved to plot ${currentCellIndex + 1}`);
-        return;
-      }
-      
-      if (lowerTranscript.includes('clear')) {
+
+      // Handle delete/clear commands
+      if (text.includes('delete') || text.includes('clear')) {
         clearCurrentCell();
-        updateStatus('Cell cleared');
         return;
       }
+
+      // Extract number from speech
+      let number = extractNumber(text);
       
-      if (lowerTranscript.includes('pause') || lowerTranscript.includes('stop')) {
-        stopListening();
-        return;
-      }
-      
-      // Extract numbers from transcript
-      const numbers = extractNumbers(transcript);
-      
-      if (numbers.length === 0) {
-        updateStatus(`No valid numbers detected in: "${transcript}"`);
-        return;
-      }
-      
-      // Batch mode: process multiple numbers
-      if (isBatchMode && numbers.length > 1) {
-        processBatchNumbers(numbers);
-      } else {
-        // Single mode: use first number only
-        processSingleNumber(numbers[0]);
+      if (number !== null) {
+        if (multiplesOf5) {
+          number = Math.round(number / 5) * 5;
+        }
+        
+        insertNumber(number);
+        
+        if (batchMode) {
+          moveToNextCell();
+        }
       }
     }
-    
-    function extractNumbers(text) {
-      const numbers = [];
-      
-      // Word to number mapping
-      const wordToNum = {
+
+    function extractNumber(text) {
+      // Try to parse direct numbers
+      const directNumber = parseFloat(text);
+      if (!isNaN(directNumber)) return directNumber;
+
+      // Word to number conversion
+      const words = {
         'zero': 0, 'one': 1, 'two': 2, 'three': 3, 'four': 4,
         'five': 5, 'six': 6, 'seven': 7, 'eight': 8, 'nine': 9,
         'ten': 10, 'eleven': 11, 'twelve': 12, 'thirteen': 13, 'fourteen': 14,
         'fifteen': 15, 'sixteen': 16, 'seventeen': 17, 'eighteen': 18, 'nineteen': 19,
-        'twenty': 20, 'twenty-five': 25, 'thirty': 30, 'thirty-five': 35,
-        'forty': 40, 'forty-five': 45, 'fifty': 50, 'fifty-five': 55,
-        'sixty': 60, 'sixty-five': 65, 'seventy': 70, 'seventy-five': 75,
-        'eighty': 80, 'eighty-five': 85, 'ninety': 90, 'ninety-five': 95,
-        'hundred': 100
+        'twenty': 20, 'thirty': 30, 'forty': 40, 'fifty': 50,
+        'sixty': 60, 'seventy': 70, 'eighty': 80, 'ninety': 90,
+        'hundred': 100, 'thousand': 1000
       };
-      
-      // Split by common delimiters
-      const parts = text.toLowerCase().split(/[,\s]+/);
-      
-      for (const part of parts) {
-        // Check if it's a digit
-        const numMatch = part.match(/\d+/);
-        if (numMatch) {
-          const num = parseInt(numMatch[0]);
-          if (isValidNumber(num)) {
-            numbers.push(num);
-          }
-          continue;
-        }
-        
-        // Check if it's a word number
-        if (wordToNum.hasOwnProperty(part)) {
-          const num = wordToNum[part];
-          if (isValidNumber(num)) {
-            numbers.push(num);
+
+      let total = 0;
+      let current = 0;
+
+      text.split(/\s+/).forEach(word => {
+        const num = words[word];
+        if (num !== undefined) {
+          if (num === 100 || num === 1000) {
+            current = current === 0 ? num : current * num;
+          } else {
+            current += num;
           }
         }
-      }
-      
-      return numbers;
+      });
+
+      total += current;
+      return total > 0 ? total : null;
     }
-    
-    function isValidNumber(num) {
-      if (num < 0 || num > 100) return false;
+    function insertNumber(number) {
+      const colName = assessmentColumns[currentCol - 1];
+      const oldValue = currentTrial.data[currentRow][colName];
       
-      if (multiplesOf5Only) {
-        return num % 5 === 0;
-      }
+      // Save to undo stack
+      undoStack.push({
+        row: currentRow,
+        col: currentCol,
+        oldValue: oldValue,
+        newValue: number.toString()
+      });
+
+      // Update data
+      currentTrial.data[currentRow][colName] = number.toString();
       
-      return true;
-    }
-    
-    function processSingleNumber(number) {
-      const cell = document.querySelector(`td[data-index="${currentCellIndex}"][data-field="rating"]`);
+      // Update cell display
+      const cell = document.querySelector(`td[data-row="${currentRow}"][data-col="${currentCol}"]`);
       if (cell) {
         cell.textContent = number;
-        saveCell(currentCellIndex, 'rating', number.toString());
-        playBeep(1100, 120);
-        updateStatus(`✓ Recorded ${number} for plot ${currentCellIndex + 1}`);
-        
-        // Auto-advance
-        setTimeout(() => {
-          moveToNextCell();
-        }, 300);
-      }
-    }
-    
-    function processBatchNumbers(numbers) {
-      let recordedCount = 0;
-      let startIndex = currentCellIndex;
-      
-      for (let i = 0; i < numbers.length; i++) {
-        if (currentCellIndex >= currentTrial.data.length) {
-          break;
-        }
-        
-        const cell = document.querySelector(`td[data-index="${currentCellIndex}"][data-field="rating"]`);
-        if (cell) {
-          cell.textContent = numbers[i];
-          saveCell(currentCellIndex, 'rating', numbers[i].toString());
-          recordedCount++;
-          
-          if (i < numbers.length - 1) {
-            moveToNextCell();
-          }
-        }
       }
       
-      playBeep(1200, 150);
-      updateStatus(`✓ Batch recorded ${recordedCount} values: ${numbers.join(', ')}`);
+      saveTrialToStorage(currentTrial);
       
-      // Move to next cell after batch
-      setTimeout(() => {
-        moveToNextCell();
-      }, 500);
+      document.getElementById('statusText').textContent = `✅ Recorded: ${number}`;
     }
-    
-    function updateStatus(message) {
-      document.getElementById('statusText').textContent = message;
+
+    function clearCurrentCell() {
+      const colName = assessmentColumns[currentCol - 1];
+      const oldValue = currentTrial.data[currentRow][colName];
+      
+      undoStack.push({
+        row: currentRow,
+        col: currentCol,
+        oldValue: oldValue,
+        newValue: ''
+      });
+
+      currentTrial.data[currentRow][colName] = '';
+      
+      const cell = document.querySelector(`td[data-row="${currentRow}"][data-col="${currentCol}"]`);
+      if (cell) {
+        cell.textContent = '';
+      }
+      
+      saveTrialToStorage(currentTrial);
+      document.getElementById('statusText').textContent = '🗑️ Cell cleared';
     }
-    
-    // ============================================
-    // SETTINGS
-    // ============================================
+
+    function moveToNextCell() {
+      currentCol++;
+      
+      // If we've gone past the last assessment column, move to next row
+      if (currentCol > assessmentColumns.length) {
+        currentCol = 1; // Reset to first assessment column
+        currentRow++;
+        
+        // If we've gone past the last row, wrap to beginning
+        if (currentRow >= currentTrial.data.length) {
+          currentRow = 0;
+          document.getElementById('statusText').textContent = '🔄 Wrapped to beginning';
+        }
+      }
+      
+      highlightCurrentCell();
+    }
+
+    function undoLastEntry() {
+      if (undoStack.length === 0) {
+        alert('Nothing to undo');
+        return;
+      }
+
+      const lastAction = undoStack.pop();
+      const colName = assessmentColumns[lastAction.col - 1];
+      
+      currentTrial.data[lastAction.row][colName] = lastAction.oldValue;
+      
+      const cell = document.querySelector(`td[data-row="${lastAction.row}"][data-col="${lastAction.col}"]`);
+      if (cell) {
+        cell.textContent = lastAction.oldValue;
+      }
+      
+      currentRow = lastAction.row;
+      currentCol = lastAction.col;
+      
+      highlightCurrentCell();
+      saveTrialToStorage(currentTrial);
+      
+      document.getElementById('statusText').textContent = '↩️ Undone';
+    }
+
+    // ==================== SETTINGS ====================
     function toggleBatchMode() {
-      isBatchMode = document.getElementById('batchModeToggle').checked;
-      const modeIndicator = document.getElementById('modeIndicator');
+      batchMode = document.getElementById('batchModeToggle').checked;
+      const indicator = document.getElementById('modeIndicator');
       const modeText = document.getElementById('modeText');
       
-      if (isBatchMode) {
-        modeIndicator.className = 'mode-indicator mode-batch';
-        modeText.textContent = 'Batch Mode (Multiple Numbers)';
+      if (batchMode) {
+        indicator.className = 'mode-indicator mode-batch';
+        modeText.textContent = 'Batch Mode: Auto-advance after each number';
       } else {
-        modeIndicator.className = 'mode-indicator mode-single';
-        modeText.textContent = 'Single Cell Mode';
+        indicator.className = 'mode-indicator mode-single';
+        modeText.textContent = 'Single Cell Mode: Stay on current cell';
       }
     }
-    
+
     function toggleMultiplesOf5() {
-      multiplesOf5Only = document.getElementById('multiplesOf5Toggle').checked;
-      updateAcceptedNumbersDisplay();
+      multiplesOf5 = document.getElementById('multiplesOf5Toggle').checked;
     }
-    
-    function updateAcceptedNumbersDisplay() {
-      const display = document.getElementById('acceptedNumbers');
-      if (multiplesOf5Only) {
-        display.textContent = 'Multiples of 5 only (0, 5, 10, 15, 20, 25...)';
-      } else {
-        display.textContent = 'All numbers (0-100)';
-      }
-    }
-    
+
     function toggleLegend() {
       document.getElementById('legend').classList.toggle('active');
     }
-    
-    // ============================================
-    // EXPORT
-    // ============================================
+
+    // ==================== EXPORT ====================
     function exportToCSV() {
-      if (!currentTrial) {
-        alert('No trial loaded');
-        return;
-      }
-      
-      let csv = 'Plot,Rating,Notes\n';
-      
+      if (!currentTrial) return;
+
+      // Create CSV header
+      let csv = 'Treatment,Rep,Subplot,' + assessmentColumns.join(',') + '\n';
+
+      // Add data rows
       currentTrial.data.forEach(row => {
-        csv += `${row.plot},"${row.rating}","${row.notes}"\n`;
+        const values = [
+          row.treatment,
+          row.rep,
+          row.subplot,
+          ...assessmentColumns.map(col => row[col] || '')
+        ];
+        csv += values.join(',') + '\n';
       });
-      
+
+      // Download
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `${currentTrial.code}_${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-      
-      playBeep(1300, 200);
-      updateStatus('✓ CSV exported successfully!');
     }
+
+    // ==================== STARTUP ====================
+    window.onload = initApp;
   </script>
 </body>
 </html>
