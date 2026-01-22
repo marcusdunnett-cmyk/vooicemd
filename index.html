@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Field Trial Data Collector</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-danger {
+            background: #ff4757;
+            color: white;
+        }
+
+        .btn-success {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .status {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .status.listening {
+            background: #e8f5e9;
+            color: #2e7d32;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        .data-table th, .data-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .data-table th {
+            background: #f5f5f5;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .data-table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .field-mode {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a1a1a;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .field-mode h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+
+        .field-mode .plot-info {
+            font-size: 48px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 30px;
+        }
+
+        .field-mode .instruction {
+            font-size: 24px;
+            margin-bottom: 40px;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .field-mode .mic-button {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            font-size: 60px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+        }
+
+        .field-mode .mic-button:active {
+            transform: scale(0.95);
+        }
+
+        .field-mode .mic-button.listening {
+            animation: pulse-mic 1s infinite;
+            background: #2ecc71;
+        }
+
+        @keyframes pulse-mic {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .field-mode .controls {
+            position: absolute;
+            bottom: 30px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .field-mode .control-btn {
+            padding: 15px 30px;
+            border: 2px solid white;
+            background: transparent;
+            color: white;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 10px;
+        }
+
+        .speed-control input[type="range"] {
+            flex: 1;
+        }
+
+        .exit-hint {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 12px;
+            color: #666;
+            background: rgba(255,255,255,0.1);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .auto-save-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #2ecc71;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 1001;
+        }
+
+        .auto-save-indicator.show {
+            opacity: 1;
+        }
+
+        .recovery-banner {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .recovery-banner .message {
+            color: #856404;
+            font-weight: 600;
+        }
+
+        .recovery-banner .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .recovery-banner button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .recovery-banner .btn-restore {
+            background: #28a745;
+            color: white;
+        }
+
+        .recovery-banner .btn-discard {
+            background: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="setupScreen">
+        <h1>🌾 Field Trial Data Collector</h1>
+        <p class="subtitle">Voice-powered data collection</p>
+
+        <div id="recoveryBanner" class="recovery-banner hidden">
+            <div class="message">
+                ⚠️ Unsaved data found! Restore previous session?
+            </div>
+            <div class="actions">
+                <button class="btn-restore" onclick="restoreData()">Restore</button>
+                <button class="btn-discard" onclick="discardAutoSave()">Discard</button>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>Trial Name</label>
+            <input type="text" id="trialName" placeholder="e.g., Corn Yield 2024">
+        </div>
+
+        <div class="input-group">
+            <label>Number of Plots</label>
+            <input type="number" id="numPlots" placeholder="e.g., 50" min="1">
+        </div>
+
+        <div class="input-group">
+            <label>Data Type</label>
+            <select id="dataType">
+                <option value="yield">Yield (kg/ha)</option>
+                <option value="height">Plant Height (cm)</option>
+                <option value="count">Plant Count</option>
+                <option value="rating">Disease Rating (1-10)</option>
+                <option value="custom">Custom</option>
+            </select>
+        </div>
+
+        <div class="input-group hidden" id="customUnitGroup">
+            <label>Custom Unit</label>
+            <input type="text" id="customUnit" placeholder="e.g., tons, bushels">
+        </div>
+
+        <button class="btn btn-primary" onclick="startTrial()">Start Field Mode</button>
+        
+        <div id="dataSection" class="hidden">
+            <h3>Collected Data</h3>
+            <div class="speed-control">
+                <label>Auto-advance Speed:</label>
+                <input type="range" id="speedSlider" min="0" max="5000" value="2000" step="500">
+                <span id="speedValue">2.0s</span>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Plot</th>
+                        <th>Value</th>
+                        <th>Unit</th>
+                    </tr>
+                </thead>
+                <tbody id="dataTableBody"></tbody>
+            </table>
+            <button class="btn btn-success" onclick="exportData()">Export CSV</button>
+            <button class="btn btn-danger" onclick="clearData()">Clear All Data</button>
+        </div>
+    </div>
+
+    <div class="field-mode hidden" id="fieldMode">
+        <div class="exit-hint">Double-tap top-right corner to exit</div>
+        <h2 id="trialTitle"></h2>
+        <div class="plot-info" id="currentPlot">Plot 1</div>
+        <div class="instruction">Tap microphone and say the value</div>
+        <button class="mic-button" id="micButton" onclick="toggleVoiceRecognition()">🎤</button>
+        <div class="controls">
+            <button class="control-btn" onclick="previousPlot()">← Previous</button>
+            <button class="control-btn" onclick="nextPlot()">Next →</button>
+        </div>
+    </div>
+
+    <div class="auto-save-indicator" id="autoSaveIndicator">💾 Auto-saved</div>
+
+    <script>
+        let currentPlot = 1;
+        let totalPlots = 0;
+        let trialData = [];
+        let recognition;
+        let isListening = false;
+        let trialName = '';
+        let dataUnit = '';
+        let autoAdvanceSpeed = 2000;
+        let autoAdvanceTimeout;
+
+        // Auto-save functionality
+        const AUTO_SAVE_KEY = 'fieldTrialAutoSave';
+
+        function autoSaveData() {
+            const saveData = {
+                trialName: trialName,
+                totalPlots: totalPlots,
+                currentPlot: currentPlot,
+                dataUnit: dataUnit,
+                trialData: trialData,
+                timestamp: new Date().toISOString()
+            };
+            localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(saveData));
+            showAutoSaveIndicator();
+        }
+
+        function loadAutoSavedData() {
+            const saved = localStorage.getItem(AUTO_SAVE_KEY);
+            if (saved) {
+                const data = JSON.parse(saved);
+                // Check if data is recent (within last 7 days)
+                const savedDate = new Date(data.timestamp);
+                const daysSince = (new Date() - savedDate) / (1000 * 60 * 60 * 24);
+                
+                if (daysSince < 7 && data.trialData.length > 0) {
+                    document.getElementById('recoveryBanner').classList.remove('hidden');
+                    return data;
+                }
+            }
+            return null;
+        }
+
+        function restoreData() {
+            const saved = loadAutoSavedData();
+            if (saved) {
+                trialName = saved.trialName;
+                totalPlots = saved.totalPlots;
+                currentPlot = saved.currentPlot;
+                dataUnit = saved.dataUnit;
+                trialData = saved.trialData;
+
+                document.getElementById('trialName').value = trialName;
+                document.getElementById('numPlots').value = totalPlots;
+                
+                document.getElementById('recoveryBanner').classList.add('hidden');
+                startTrial();
+                updateDataTable();
+                alert(`✅ Restored ${trialData.length} entries from previous session`);
+            }
+        }
+
+        function discardAuto
