@@ -1,461 +1,331 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Field Trial Data Collector</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-            color: #333;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
-
-        h1 {
-            text-align: center;
-            color: #667eea;
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
-
-        .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #555;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-
-        input:focus, select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-bottom: 10px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn-primary:active {
-            transform: scale(0.98);
-        }
-
-        .btn-secondary {
-            background: #f0f0f0;
-            color: #333;
-        }
-
-        .btn-danger {
-            background: #ff4757;
-            color: white;
-        }
-
-        .btn-success {
-            background: #2ecc71;
-            color: white;
-        }
-
-        .status {
-            text-align: center;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-weight: 600;
-        }
-
-        .status.listening {
-            background: #e8f5e9;
-            color: #2e7d32;
-            animation: pulse 1.5s infinite;
-        }
-
-        .status.error {
-            background: #ffebee;
-            color: #c62828;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            font-size: 14px;
-        }
-
-        .data-table th, .data-table td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .data-table th {
-            background: #f5f5f5;
-            font-weight: 600;
-            color: #555;
-        }
-
-        .data-table tr:hover {
-            background: #f9f9f9;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .field-mode {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #1a1a1a;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .field-mode h2 {
-            font-size: 36px;
-            margin-bottom: 20px;
-        }
-
-        .field-mode .plot-info {
-            font-size: 48px;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 30px;
-        }
-
-        .field-mode .instruction {
-            font-size: 24px;
-            margin-bottom: 40px;
-            text-align: center;
-            padding: 0 20px;
-        }
-
-        .field-mode .mic-button {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            font-size: 60px;
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
-        }
-
-        .field-mode .mic-button:active {
-            transform: scale(0.95);
-        }
-
-        .field-mode .mic-button.listening {
-            animation: pulse-mic 1s infinite;
-            background: #2ecc71;
-        }
-
-        @keyframes pulse-mic {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-
-        .field-mode .controls {
-            position: absolute;
-            bottom: 30px;
-            display: flex;
-            gap: 20px;
-        }
-
-        .field-mode .control-btn {
-            padding: 15px 30px;
-            border: 2px solid white;
-            background: transparent;
-            color: white;
-            border-radius: 10px;
-            font-size: 18px;
-            cursor: pointer;
-        }
-
-        .speed-control {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 20px;
-            padding: 15px;
-            background: #f5f5f5;
-            border-radius: 10px;
-        }
-
-        .speed-control input[type="range"] {
-            flex: 1;
-        }
-
-        .exit-hint {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: 12px;
-            color: #666;
-            background: rgba(255,255,255,0.1);
-            padding: 5px 10px;
-            border-radius: 5px;
-        }
-
-        .auto-save-indicator {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #2ecc71;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 1001;
-        }
-
-        .auto-save-indicator.show {
-            opacity: 1;
-        }
-
-        .recovery-banner {
-            background: #fff3cd;
-            border: 2px solid #ffc107;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .recovery-banner .message {
-            color: #856404;
-            font-weight: 600;
-        }
-
-        .recovery-banner .actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .recovery-banner button {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .recovery-banner .btn-restore {
-            background: #28a745;
-            color: white;
-        }
-
-        .recovery-banner .btn-discard {
-            background: #dc3545;
-            color: white;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Field Trial Data Collector</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f5;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .container { max-width: 600px; margin: 0 auto; background: white; min-height: 100vh; }
+    .header { background: #007AFF; color: white; padding: 20px; text-align: center; }
+    .page { display: none; padding: 20px; }
+    .page.active { display: block; }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; margin-bottom: 5px; font-weight: 600; color: #333; }
+    input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+    .btn {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+      touch-action: manipulation;
+    }
+    .btn-primary { background: #007AFF; color: white; }
+    .btn-success { background: #34C759; color: white; }
+    .btn-secondary { background: #8E8E93; color: white; }
+    .btn-warning { background: #FF9500; color: white; }
+    .btn-danger { background: #FF3B30; color: white; }
+    .assessment-columns { margin-top: 20px; }
+    .column-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      padding: 10px;
+      background: #f9f9f9;
+      border-radius: 8px;
+    }
+    .column-item input { flex: 1; }
+    .delete-btn {
+      background: #FF3B30;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .controls button { flex: 1; min-width: 120px; padding: 12px; }
+    .status { padding: 15px; background: #f0f0f0; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+    .status.listening { background: #34C759; color: white; }
+    .current-plot { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
+    .spreadsheet { overflow-x: auto; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+    th { background: #f0f0f0; font-weight: 600; position: sticky; top: 0; }
+    td.current-cell { background: #007AFF; color: white; }
+    td input { width: 100%; border: none; text-align: center; padding: 5px; }
+    .field-mode {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: black;
+      color: white;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 1000;
+    }
+    .field-mode.active { display: flex; }
+    .field-mode-info { font-size: 48px; font-weight: bold; text-align: center; opacity: 0.3; }
+    .exit-corner {
+      position: fixed;
+      bottom: 0; right: 0;
+      width: 100px; height: 100px;
+      background: rgba(255, 59, 48, 0.3);
+      border-top-left-radius: 100px;
+    }
+    .exit-instruction {
+      position: fixed;
+      bottom: 20px; right: 20px;
+      background: rgba(255, 59, 48, 0.8);
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+    .legend {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 999;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    .legend.active { display: block; }
+    .legend-content { background: white; border-radius: 12px; padding: 20px; max-width: 500px; margin: 0 auto; }
+    .legend-item { padding: 10px; margin-bottom: 10px; background: #f9f9f9; border-radius: 8px; }
+    .legend-command { font-weight: bold; color: #007AFF; }
+    .toggle-group {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .switch { position: relative; width: 50px; height: 28px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc;
+      transition: 0.4s;
+      border-radius: 28px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px; width: 20px;
+      left: 4px; bottom: 4px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider { background-color: #34C759; }
+    input:checked + .slider:before { transform: translateX(22px); }
+    
+    /* Auto-save notification */
+    .restore-banner {
+      background: #FF9500;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-weight: bold;
+      display: none;
+    }
+    .restore-banner.active { display: block; }
+    .restore-buttons { display: flex; gap: 10px; margin-top: 10px; justify-content: center; }
+    .restore-buttons button { padding: 8px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+  </style>
 </head>
 <body>
-    <div class="container" id="setupScreen">
-        <h1>🌾 Field Trial Data Collector</h1>
-        <p class="subtitle">Voice-powered data collection</p>
-
-        <div id="recoveryBanner" class="recovery-banner hidden">
-            <div class="message">
-                ⚠️ Unsaved data found! Restore previous session?
-            </div>
-            <div class="actions">
-                <button class="btn-restore" onclick="restoreData()">Restore</button>
-                <button class="btn-discard" onclick="discardAutoSave()">Discard</button>
-            </div>
+  <div class="container">
+    <!-- Restore Banner -->
+    <div class="restore-banner" id="restoreBanner">
+      <div>⚠️ Unsaved data found from previous session!</div>
+      <div class="restore-buttons">
+        <button onclick="restoreData()" style="background: white; color: #FF9500;">Restore Data</button>
+        <button onclick="discardData()" style="background: #FF3B30; color: white;">Discard</button>
+      </div>
+    </div>
+    
+    <!-- Page 1: Trial Setup -->
+    <div id="page1" class="page active">
+      <div class="header"><h1>Trial Setup</h1></div>
+      <div style="padding: 20px;">
+        <div class="form-group">
+          <label>Trial ID</label>
+          <input type="text" id="trialId">
         </div>
-
-        <div class="input-group">
-            <label>Trial Name</label>
-            <input type="text" id="trialName" placeholder="e.g., Corn Yield 2024">
+        <div class="form-group">
+          <label>Date of Assessment</label>
+          <input type="date" id="trialDate">
         </div>
-
-        <div class="input-group">
-            <label>Number of Plots</label>
-            <input type="number" id="numPlots" placeholder="e.g., 50" min="1">
+        <div class="form-group">
+          <label>Trial Name</label>
+          <input type="text" id="trialName">
         </div>
-
-        <div class="input-group">
-            <label>Data Type</label>
-            <select id="dataType">
-                <option value="yield">Yield (kg/ha)</option>
-                <option value="height">Plant Height (cm)</option>
-                <option value="count">Plant Count</option>
-                <option value="rating">Disease Rating (1-10)</option>
-                <option value="custom">Custom</option>
-            </select>
+        <div class="form-group">
+          <label>Number of Treatments</label>
+          <input type="number" id="numTreatments" min="1">
         </div>
-
-        <div class="input-group hidden" id="customUnitGroup">
-            <label>Custom Unit</label>
-            <input type="text" id="customUnit" placeholder="e.g., tons, bushels">
+        <div class="form-group">
+          <label>Number of Replicates</label>
+          <input type="number" id="numReplicates" min="1">
         </div>
-
-        <button class="btn btn-primary" onclick="startTrial()">Start Field Mode</button>
+        <div class="form-group">
+          <label>Number of Subplots per Plot (optional)</label>
+          <input type="number" id="numSubplots" min="1">
+        </div>
+        <div class="assessment-columns">
+          <label>Assessment Columns</label>
+          <div id="columnsList"></div>
+          <button class="btn btn-secondary" onclick="addColumn()">+ Add Assessment Column</button>
+        </div>
+        <button class="btn btn-primary" onclick="createTrial()">Create Trial</button>
+      </div>
+    </div>
+    
+    <!-- Page 2: Data Collection -->
+    <div id="page2" class="page">
+      <div class="header"><h1 id="trialTitle">Data Collection</h1></div>
+      <div style="padding: 20px;">
+        <button class="btn btn-secondary" onclick="goToPage1()">← Back to Setup</button>
         
-        <div id="dataSection" class="hidden">
-            <h3>Collected Data</h3>
-            <div class="speed-control">
-                <label>Auto-advance Speed:</label>
-                <input type="range" id="speedSlider" min="0" max="5000" value="2000" step="500">
-                <span id="speedValue">2.0s</span>
-            </div>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Plot</th>
-                        <th>Value</th>
-                        <th>Unit</th>
-                    </tr>
-                </thead>
-                <tbody id="dataTableBody"></tbody>
-            </table>
-            <button class="btn btn-success" onclick="exportData()">Export CSV</button>
-            <button class="btn btn-danger" onclick="clearData()">Clear All Data</button>
+        <div class="toggle-group" style="margin-top: 20px;">
+          <span>Announce Plot Changes</span>
+          <label class="switch">
+            <input type="checkbox" id="announceToggle" checked onchange="announceEnabled = this.checked">
+            <span class="slider"></span>
+          </label>
         </div>
-    </div>
-
-    <div class="field-mode hidden" id="fieldMode">
-        <div class="exit-hint">Double-tap top-right corner to exit</div>
-        <h2 id="trialTitle"></h2>
-        <div class="plot-info" id="currentPlot">Plot 1</div>
-        <div class="instruction">Tap microphone and say the value</div>
-        <button class="mic-button" id="micButton" onclick="toggleVoiceRecognition()">🎤</button>
+        
+        <div class="form-group">
+          <label>Cell Switching Speed</label>
+          <input type="range" id="speedSlider" min="0" max="1000" value="50" step="25" oninput="updateSpeed(this.value)">
+          <div style="display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-top: 5px;">
+            <span>Instant</span>
+            <span id="speedValue">50ms</span>
+            <span>Slow</span>
+          </div>
+        </div>
+        
         <div class="controls">
-            <button class="control-btn" onclick="previousPlot()">← Previous</button>
-            <button class="control-btn" onclick="nextPlot()">Next →</button>
+          <button class="btn btn-success" onclick="toggleListening()">Start Recording</button>
+          <button class="btn btn-secondary" onclick="toggleFieldMode()">Field Mode</button>
+          <button class="btn btn-secondary" onclick="showLegend()">Commands</button>
+          <button class="btn btn-primary" onclick="exportCSV()">Export CSV</button>
         </div>
+        
+        <div class="status" id="status">
+          <div class="current-plot" id="currentPlotDisplay">Plot: ---</div>
+          <div id="statusText">Press "Start Recording" to begin</div>
+        </div>
+        
+        <div class="spreadsheet">
+          <table id="dataTable"></table>
+        </div>
+        
+        <button class="btn btn-secondary" onclick="goToPage1()">← Back to Setup</button>
+      </div>
     </div>
+  </div>
+  
+  <!-- Field Mode -->
+  <div class="field-mode" id="fieldMode">
+    <div class="field-mode-info" id="fieldModeInfo">Plot 101</div>
+    <div class="exit-corner" id="exitCorner"></div>
+    <div class="exit-instruction">Double-tap bottom-right corner to exit</div>
+  </div>
+  
+  <!-- Legend -->
+  <div class="legend" id="legend">
+    <div class="legend-content">
+      <h2>Voice Commands</h2>
+      <div class="legend-item"><div class="legend-command">"Start recording"</div><div>Start listening</div></div>
+      <div class="legend-item"><div class="legend-command">"Pause"</div><div>Pause listening</div></div>
+      <div class="legend-item"><div class="legend-command">"Resume"</div><div>Resume listening</div></div>
+      <div class="legend-item"><div class="legend-command">"Go to plot [number]"</div><div>Jump to plot</div></div>
+      <div class="legend-item"><div class="legend-command">"Where am I"</div><div>Announce current plot</div></div>
+      <div class="legend-item"><div class="legend-command">"Undo"</div><div>Go back one cell</div></div>
+      <div class="legend-item"><div class="legend-command">"Clear"</div><div>Clear current cell</div></div>
+      <div class="legend-item"><div class="legend-command">"Repeat"</div><div>Repeat last value</div></div>
+      <div class="legend-item"><div class="legend-command">[Number]</div><div>Record and advance</div></div>
+      <button class="btn btn-primary" onclick="hideLegend()">Close</button>
+    </div>
+  </div>
 
-    <div class="auto-save-indicator" id="autoSaveIndicator">💾 Auto-saved</div>
-
-    <script>
-        let currentPlot = 1;
-        let totalPlots = 0;
-        let trialData = [];
-        let recognition;
-        let isListening = false;
-        let trialName = '';
-        let dataUnit = '';
-        let autoAdvanceSpeed = 2000;
-        let autoAdvanceTimeout;
-
-        // Auto-save functionality
-        const AUTO_SAVE_KEY = 'fieldTrialAutoSave';
-
-        function autoSaveData() {
-            const saveData = {
-                trialName: trialName,
-                totalPlots: totalPlots,
-                currentPlot: currentPlot,
-                dataUnit: dataUnit,
-                trialData: trialData,
-                timestamp: new Date().toISOString()
-            };
-            localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(saveData));
-            showAutoSaveIndicator();
+  <script>
+    var trialData = {};
+    var assessmentColumns = [];
+    var plots = [];
+    var currentRow = 0;
+    var currentCol = 0;
+    var isListening = false;
+    var recognition = null;
+    var lastValue = '';
+    var announceEnabled = true;
+    var holdTimer = null;
+    var audioContext = null;
+    var cellSwitchDelay = 50;
+    var lastTapTime = 0;
+    
+    document.getElementById('trialDate').valueAsDate = new Date();
+    addColumn();
+    
+    // ========== AUTO-SAVE FEATURE ==========
+    
+    // Check for saved data on page load
+    window.addEventListener('load', function() {
+      checkForSavedData();
+      setupFieldModeExit();
+    });
+    
+    function checkForSavedData() {
+      try {
+        var saved = localStorage.getItem('fieldTrialAutoSave');
+        if (saved) {
+          document.getElementById('restoreBanner').classList.add('active');
         }
-
-        function loadAutoSavedData() {
-            const saved = localStorage.getItem(AUTO_SAVE_KEY);
-            if (saved) {
-                const data = JSON.parse(saved);
-                // Check if data is recent (within last 7 days)
-                const savedDate = new Date(data.timestamp);
-                const daysSince = (new Date() - savedDate) / (1000 * 60 * 60 * 24);
-                
-                if (daysSince < 7 && data.trialData.length > 0) {
-                    document.getElementById('recoveryBanner').classList.remove('hidden');
-                    return data;
-                }
-            }
-            return null;
-        }
-
-        function restoreData() {
-            const saved = loadAutoSavedData();
-            if (saved) {
-                trialName = saved.trialName;
-                totalPlots = saved.totalPlots;
-                currentPlot = saved.currentPlot;
-                dataUnit = saved.dataUnit;
-                trialData = saved.trialData;
-
-                document.getElementById('trialName').value = trialName;
-                document.getElementById('numPlots').value = totalPlots;
-                
-                document.getElementById('recoveryBanner').classList.add('hidden');
-                startTrial();
-                updateDataTable();
-                alert(`✅ Restored ${trialData.length} entries from previous session`);
-            }
-        }
-
-        function discardAuto
+      } catch(e) {
+        console.log('LocalStorage check failed:', e);
+      }
+    }
+    
+    function saveDataToLocalStorage() {
+      try {
+        var saveData = {
+          trialData: trialData,
+          assessmentColumns: assessmentColumns,
+          plots: plots,
+          currentRow: currentRow,
+          currentCol: currentCol,
+          timestamp: new Date().toISOString()
+        };
+        localStorage.setItem('fieldTrialAutoSave', JSON.stringify(saveData));
+      } catch(e) {
+        console.log('Auto-save failed:', e);
+      }
+    }
+    
+    function restoreData() {
+      try {
+        var saved = localStorage.getItem('fieldTrial
