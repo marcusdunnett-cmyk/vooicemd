@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Field Trial Voice Assistant</title>
+  <title>voiceMD</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; }
@@ -36,7 +36,8 @@
     .spreadsheet { overflow-x: auto; margin: 20px 0; border-radius: 8px; border: 1px solid #e5e7eb; }
     table { width: 100%; border-collapse: collapse; background: white; }
     th { background: #f9fafb; padding: 12px; text-align: left; font-weight: 600; color: #374151; border-bottom: 2px solid #e5e7eb; position: sticky; top: 0; }
-    td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
+    td { padding: 12px; border-bottom: 1px solid #e5e7eb; cursor: text; }
+    td:focus { outline: 2px solid #667eea; background: #eff6ff; }
     .current-cell { background: #fef3c7 !important; border: 3px solid #f59e0b !important; font-weight: 600; animation: pulse 1.5s infinite; }
     @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.4); } 50% { box-shadow: 0 0 0 8px rgba(245,158,11,0); } }
     .field-mode { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); z-index: 1000; }
@@ -66,6 +67,7 @@
     input:checked + .slider:before { transform: translateX(26px); }
     .auto-save-indicator { position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(16,185,129,0.3); opacity: 0; transition: opacity 0.3s; z-index: 3000; }
     .auto-save-indicator.show { opacity: 1; }
+    .watermark { text-align: center; margin-top: 40px; padding: 20px; color: #9ca3af; font-size: 14px; font-style: italic; }
   </style>
 </head>
 <body>
@@ -73,10 +75,11 @@
   
   <div class="container">
     <div id="page0" class="page active">
-      <div class="header"><h1>Field Trial Voice Assistant</h1></div>
+      <div class="header"><h1>voiceMD</h1></div>
       <div style="padding: 20px;">
         <button class="btn btn-primary" id="newAssessmentBtn">+ New Assessment</button>
         <div id="trialList"></div>
+        <div class="watermark">By Mr Sa</div>
       </div>
     </div>
 
@@ -193,7 +196,8 @@
         <span class="legend-command">"Pause"</span>
         <span>Pause listening</span>
       </div>
-      <div class="legend-item">
+      <div class="legend-
+        item">
         <span class="legend-command">"Resume"</span>
         <span>Resume listening</span>
       </div>
@@ -224,6 +228,7 @@
       loadTrialList();
       setupEventListeners();
       addInitialColumn();
+      document.getElementById('trialDate').valueAsDate = new Date();
     });
     
     function setupEventListeners() {
@@ -389,7 +394,8 @@
       };
       synth.speak(u);
     }
-        function createTrial() {
+    
+    function createTrial() {
       var trialId = document.getElementById('trialId').value.trim();
       var trialDate = document.getElementById('trialDate').value;
       var trialName = document.getElementById('trialName').value.trim();
@@ -464,7 +470,6 @@
       var headerRow = document.createElement('tr');
       var headers = ['Plot'];
       if (trialData.numSubplots > 0) headers.push('Subplot');
-      headers.push('Rep', 'Treatment');
       assessmentColumns.forEach(function(col) { headers.push(col); });
       headers.forEach(function(h) {
         var th = document.createElement('th');
@@ -486,16 +491,21 @@
           tdSub.textContent = plot.subplot;
           tr.appendChild(tdSub);
         }
-        var td2 = document.createElement('td');
-        td2.textContent = plot.rep;
-        tr.appendChild(td2);
-        var td3 = document.createElement('td');
-        td3.textContent = plot.treatment;
-        tr.appendChild(td3);
         assessmentColumns.forEach(function(col, colIdx) {
           var td = document.createElement('td');
           td.textContent = plot[col] || '';
           td.dataset.col = colIdx;
+          td.contentEditable = true;
+          td.addEventListener('blur', function() {
+            plot[col] = td.textContent.trim();
+            debounceSave();
+          });
+          td.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              td.blur();
+            }
+          });
           tr.appendChild(td);
         });
         tbody.appendChild(tr);
@@ -517,7 +527,6 @@
         return;
       }
       
-      var offset = trialData.numSubplots > 0 ? 4 : 3;
       var row = document.querySelector('tr[data-row="' + currentRow + '"]');
       if (row) {
         var cell = row.querySelector('td[data-col="' + currentCol + '"]');
@@ -531,8 +540,7 @@
       document.getElementById('currentPlotDisplay').textContent = 'Plot ' + plotDisplay + ' - ' + assessmentColumns[currentCol];
       document.getElementById('fieldModeInfo').textContent = 'Plot ' + plotDisplay;
     }
-    
-    function updateStatus(text, listening) {
+        function updateStatus(text, listening) {
       var status = document.getElementById('status');
       var statusText = document.getElementById('statusText');
       statusText.textContent = text;
@@ -544,179 +552,185 @@
     }
     
     function toggleListening() {
-      if (!recognition) setupRecognition();
+      if (!recognition) {
+        try {
+          recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+          recognition.continuous = true;
+          recognition.interimResults = false;
+          recognition.lang = 'en-US';
+          
+          recognition.onresult = function(event) {
+            var last = event.results.length - 1;
+            var transcript = event.results[last][0].transcript.trim().toLowerCase();
+            processVoiceCommand(transcript);
+          };
+          
+          recognition.onerror = function(event) {
+            console.error('Speech recognition error:', event.error);
+            if (event.error === 'no-speech') {
+              updateStatus('No speech detected. Still listening...', true);
+            } else if (event.error === 'not-allowed') {
+              alert('Microphone access denied. Please enable microphone permissions.');
+              isListening = false;
+              document.getElementById('toggleListeningBtn').textContent = 'Start Recording';
+            }
+          };
+          
+          recognition.onend = function() {
+            if (isListening) {
+              try {
+                recognition.start();
+              } catch(e) {
+                console.error('Restart error:', e);
+              }
+            }
+          };
+        } catch(e) {
+          alert('Speech recognition not supported in this browser. Please use Chrome or Edge.');
+          return;
+        }
+      }
+      
       if (isListening) {
         recognition.stop();
         isListening = false;
         document.getElementById('toggleListeningBtn').textContent = 'Start Recording';
-        updateStatus('Paused', false);
+        document.getElementById('toggleListeningBtn').className = 'btn btn-success';
+        updateStatus('Recording stopped', false);
       } else {
+        initAudio();
         try {
           recognition.start();
           isListening = true;
-          initAudio();
-          document.getElementById('toggleListeningBtn').textContent = 'Pause Recording';
+          document.getElementById('toggleListeningBtn').textContent = 'Stop Recording';
+          document.getElementById('toggleListeningBtn').className = 'btn btn-danger';
           updateStatus('Listening...', true);
+          var plotDisplay = trialData.numSubplots > 0 ? plots[currentRow].subplotId : plots[currentRow].plot;
+          speak('Plot ' + plotDisplay);
         } catch(e) {
-          console.error('Recognition start error:', e);
+          console.error('Start error:', e);
         }
       }
-    }
-    
-    function setupRecognition() {
-      var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        alert('Speech recognition not supported in this browser');
-        return;
-      }
-      recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = false;
-      recognition.lang = 'en-US';
-      
-      recognition.onresult = function(event) {
-        var transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
-        processVoiceCommand(transcript);
-      };
-      
-      recognition.onerror = function(event) {
-        console.error('Recognition error:', event.error);
-        if (event.error === 'no-speech') return;
-        updateStatus('Error: ' + event.error, false);
-      };
-      
-      recognition.onend = function() {
-        if (isListening) {
-          try {
-            recognition.start();
-          } catch(e) {
-            console.error('Restart error:', e);
-          }
-        }
-      };
     }
     
     function processVoiceCommand(transcript) {
-      var numberWords = {
-        'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
-        'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9',
-        'ten': '10', 'eleven': '11', 'twelve': '12', 'thirteen': '13', 'fourteen': '14',
-        'fifteen': '15', 'sixteen': '16', 'seventeen': '17', 'eighteen': '18', 'nineteen': '19',
-        'twenty': '20', 'thirty': '30', 'forty': '40', 'fifty': '50',
-        'sixty': '60', 'seventy': '70', 'eighty': '80', 'ninety': '90'
-      };
+      updateStatus('Heard: "' + transcript + '"', true);
       
-      var processedText = ' ' + transcript + ' ';
-      
-      // Handle compound numbers like "twenty one" -> "21"
-      var compoundPattern = /(twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)[\s-]+(one|two|three|four|five|six|seven|eight|nine)/g;
-      processedText = processedText.replace(compoundPattern, function(match, tens, ones) {
-        return String(parseInt(numberWords[tens]) + parseInt(numberWords[ones]));
-      });
-      
-      // Replace remaining number words with word boundaries
-      for (var word in numberWords) {
-        var regex = new RegExp('\\b' + word + '\\b', 'g');
-        processedText = processedText.replace(regex, numberWords[word]);
+      if (transcript.includes('pause')) {
+        if (recognition && isListening) {
+          recognition.stop();
+          isListening = false;
+          document.getElementById('toggleListeningBtn').textContent = 'Start Recording';
+          document.getElementById('toggleListeningBtn').className = 'btn btn-success';
+          updateStatus('Paused', false);
+          speak('Paused');
+        }
+        return;
       }
       
-      processedText = processedText.trim();
-      
-      if (processedText.match(/^plot\s+(\d+)/)) {
-        var plotNum = parseInt(processedText.match(/^plot\s+(\d+)/)[1]);
-        jumpToPlot(plotNum);
-      } else if (processedText === 'where' || processedText === 'where am i') {
-        announceCurrentPlot();
-      } else if (processedText === 'undo' || processedText === 'go back') {
-        undoLastEntry();
-      } else if (processedText === 'clear' || processedText === 'delete') {
-        clearCurrentCell();
-      } else if (processedText === 'repeat' || processedText === 'same') {
-        repeatLastValue();
-      } else if (processedText === 'pause' || processedText === 'stop') {
-        toggleListening();
-      } else if (processedText === 'resume' || processedText === 'continue') {
-        if (!isListening) toggleListening();
-      } else if (processedText.match(/^\d+(\.\d+)?$/)) {
-        recordValue(processedText);
+      if (transcript.includes('resume')) {
+        if (recognition && !isListening) {
+          try {
+            recognition.start();
+            isListening = true;
+            document.getElementById('toggleListeningBtn').textContent = 'Stop Recording';
+            document.getElementById('toggleListeningBtn').className = 'btn btn-danger';
+            updateStatus('Listening...', true);
+            speak('Resumed');
+          } catch(e) {}
+        }
+        return;
       }
-    }
-    
-    function recordValue(value) {
-      if (currentRow >= plots.length) return;
-      plots[currentRow][assessmentColumns[currentCol]] = value;
-      lastValue = value;
-      playBeep();
-      debounceSave();
-      renderTable();
-      advanceCell();
+      
+      if (transcript.includes('where')) {
+        var plotDisplay = trialData.numSubplots > 0 ? plots[currentRow].subplotId : plots[currentRow].plot;
+        speak('Plot ' + plotDisplay + ', ' + assessmentColumns[currentCol]);
+        return;
+      }
+      
+      if (transcript.includes('undo')) {
+        if (currentCol > 0) {
+          currentCol--;
+        } else if (currentRow > 0) {
+          currentRow--;
+          currentCol = assessmentColumns.length - 1;
+        }
+        var col = assessmentColumns[currentCol];
+        plots[currentRow][col] = '';
+        renderTable();
+        updateCurrentCell();
+        saveCurrentTrial();
+        playBeep();
+        return;
+      }
+      
+      if (transcript.includes('clear')) {
+        var col = assessmentColumns[currentCol];
+        plots[currentRow][col] = '';
+        renderTable();
+        updateCurrentCell();
+        saveCurrentTrial();
+        playBeep();
+        return;
+      }
+      
+      if (transcript.includes('repeat')) {
+        if (lastValue) {
+          var col = assessmentColumns[currentCol];
+          plots[currentRow][col] = lastValue;
+          renderTable();
+          playBeep();
+          saveCurrentTrial();
+          setTimeout(function() {
+            advanceCell();
+          }, cellSwitchDelay);
+        }
+        return;
+      }
+      
+      var plotMatch = transcript.match(/plot\s+(\d+)/);
+      if (plotMatch) {
+        var targetPlot = parseInt(plotMatch[1]);
+        var foundIdx = plots.findIndex(function(p) { return p.plot === targetPlot; });
+        if (foundIdx !== -1) {
+          currentRow = foundIdx;
+          currentCol = 0;
+          updateCurrentCell();
+          saveCurrentTrial();
+          speak('Plot ' + targetPlot);
+        }
+        return;
+      }
+      
+      var numMatch = transcript.match(/(\d+\.?\d*)/);
+      if (numMatch) {
+        var value = numMatch[1];
+        var col = assessmentColumns[currentCol];
+        plots[currentRow][col] = value;
+        lastValue = value;
+        renderTable();
+        playBeep();
+        saveCurrentTrial();
+        setTimeout(function() {
+          advanceCell();
+        }, cellSwitchDelay);
+      }
     }
     
     function advanceCell() {
-      setTimeout(function() {
-        currentCol++;
-        if (currentCol >= assessmentColumns.length) {
-          currentCol = 0;
-          currentRow++;
-        }
-        updateCurrentCell();
-        var plotDisplay = currentRow < plots.length ? (trialData.numSubplots > 0 ? plots[currentRow].subplotId : plots[currentRow].plot) : 'Done';
-        if (currentRow < plots.length) {
+      currentCol++;
+      if (currentCol >= assessmentColumns.length) {
+        currentCol = 0;
+        currentRow++;
+      }
+      updateCurrentCell();
+      saveCurrentTrial();
+      
+      if (currentRow < plots.length) {
+        var plotDisplay = trialData.numSubplots > 0 ? plots[currentRow].subplotId : plots[currentRow].plot;
+        if (currentCol === 0) {
           speak('Plot ' + plotDisplay);
         }
-      }, cellSwitchDelay);
-    }
-    
-    function jumpToPlot(plotNum) {
-      var idx = plots.findIndex(function(p) { return p.plot === plotNum; });
-      if (idx !== -1) {
-        currentRow = idx;
-        currentCol = 0;
-        updateCurrentCell();
-        speak('Plot ' + plotNum);
-      }
-    }
-    
-    function announceCurrentPlot() {
-      if (currentRow >= plots.length) {
-        speak('Assessment complete');
-        return;
-      }
-      var plotDisplay = trialData.numSubplots > 0 ? plots[currentRow].subplotId : plots[currentRow].plot;
-      speak('Plot ' + plotDisplay + ', ' + assessmentColumns[currentCol]);
-    }
-    
-    function undoLastEntry() {
-      if (currentCol === 0 && currentRow === 0) return;
-      currentCol--;
-      if (currentCol < 0) {
-        currentCol = assessmentColumns.length - 1;
-        currentRow--;
-      }
-      if (currentRow < 0) {
-        currentRow = 0;
-        currentCol = 0;
-        return;
-      }
-      plots[currentRow][assessmentColumns[currentCol]] = '';
-      playBeep();
-      debounceSave();
-      renderTable();
-      updateCurrentCell();
-    }
-    
-    function clearCurrentCell() {
-      if (currentRow >= plots.length) return;
-      plots[currentRow][assessmentColumns[currentCol]] = '';
-      playBeep();
-      debounceSave();
-      renderTable();
-      updateCurrentCell();
-    }
-    
-    function repeatLastValue() {
-      if (lastValue && currentRow < plots.length) {
-        recordValue(lastValue);
       }
     }
     
@@ -726,14 +740,19 @@
     }
     
     function toggleFieldMode() {
-      var fieldMode = document.getElementById('fieldMode');
-      fieldMode.classList.toggle('active');
+      var fm = document.getElementById('fieldMode');
+      if (fm.classList.contains('active')) {
+        fm.classList.remove('active');
+      } else {
+        fm.classList.add('active');
+        updateCurrentCell();
+      }
     }
     
     function handleExitCorner() {
       var now = Date.now();
       if (now - lastTapTime < 500) {
-        toggleFieldMode();
+        document.getElementById('fieldMode').classList.remove('active');
         lastTapTime = 0;
       } else {
         lastTapTime = now;
@@ -752,15 +771,13 @@
       if (plots.length === 0) return;
       var headers = ['Plot'];
       if (trialData.numSubplots > 0) headers.push('Subplot');
-      headers.push('Rep', 'Treatment');
       assessmentColumns.forEach(function(col) { headers.push(col); });
       
       var csv = headers.join(',') + '\n';
       plots.forEach(function(plot) {
         var row = [plot.plot];
         if (trialData.numSubplots > 0) row.push(plot.subplot);
-        row.push(plot.rep, plot.treatment);
-        assessmentColumns.forEach(function(col) { row.push(plot[col] || ''); });
+        assessmentColumns.forEach(function(col) { row.push('"' + (plot[col] || '') + '"'); });
         csv += row.join(',') + '\n';
       });
       
@@ -771,14 +788,16 @@
       a.download = trialData.trialId + '_' + trialData.trialDate + '.csv';
       a.click();
     }
-        function goToPage0() {
+    
+    function goToPage0() {
+      loadTrialList();
       document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
       document.getElementById('page0').classList.add('active');
-      loadTrialList();
-      if (isListening && recognition) {
+      if (recognition && isListening) {
         recognition.stop();
         isListening = false;
       }
+      currentTrialId = null;
     }
     
     function goToPage1() {
