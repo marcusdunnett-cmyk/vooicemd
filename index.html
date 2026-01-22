@@ -34,8 +34,6 @@
     .btn-primary { background: #007AFF; color: white; }
     .btn-success { background: #34C759; color: white; }
     .btn-secondary { background: #8E8E93; color: white; }
-    .btn-warning { background: #FF9500; color: white; }
-    .btn-danger { background: #FF3B30; color: white; }
     .assessment-columns { margin-top: 20px; }
     .column-item {
       display: flex;
@@ -141,32 +139,10 @@
     }
     input:checked + .slider { background-color: #34C759; }
     input:checked + .slider:before { transform: translateX(22px); }
-    
-    /* Auto-save notification */
-    .restore-banner {
-      background: #FF9500;
-      color: white;
-      padding: 15px;
-      text-align: center;
-      font-weight: bold;
-      display: none;
-    }
-    .restore-banner.active { display: block; }
-    .restore-buttons { display: flex; gap: 10px; margin-top: 10px; justify-content: center; }
-    .restore-buttons button { padding: 8px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- Restore Banner -->
-    <div class="restore-banner" id="restoreBanner">
-      <div>⚠️ Unsaved data found from previous session!</div>
-      <div class="restore-buttons">
-        <button onclick="restoreData()" style="background: white; color: #FF9500;">Restore Data</button>
-        <button onclick="discardData()" style="background: #FF3B30; color: white;">Discard</button>
-      </div>
-    </div>
-    
     <!-- Page 1: Trial Setup -->
     <div id="page1" class="page active">
       <div class="header"><h1>Trial Setup</h1></div>
@@ -291,41 +267,472 @@
     document.getElementById('trialDate').valueAsDate = new Date();
     addColumn();
     
-    // ========== AUTO-SAVE FEATURE ==========
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+    }
     
-    // Check for saved data on page load
-    window.addEventListener('load', function() {
-      checkForSavedData();
-      setupFieldModeExit();
-    });
-    
-    function checkForSavedData() {
+    function playBeep() {
       try {
-        var saved = localStorage.getItem('fieldTrialAutoSave');
-        if (saved) {
-          document.getElementById('restoreBanner').classList.add('active');
+        initAudio();
+        var osc = audioContext.createOscillator();
+        var gain = audioContext.createGain();
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.5, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+        osc.start(audioContext.currentTime);
+        osc.stop(audioContext.currentTime + 0.15);
+      } catch (e) {}
+    }
+    
+    function speak(text) {
+      var wasListening = isListening;
+      if (wasListening && recognition) {
+        recognition.stop();
+        isListening = false;
+      }
+      var u = new SpeechSynthesisUtterance(text);
+      u.rate = 1.8; // Faster speech
+      u.volume = 0.8;
+      u.onend = function() {
+        if (wasListening) {
+          // Shorter delay before restarting
+          setTimeout(function() {
+            try {
+              isListening = true;
+              recognition.start();
+              document.getElementById('statusText').textContent = 'Listening...';
+            } catch(e) {
+              console.log('Speech restart error:', e);
+            }
+          }, Math.max(cellSwitchDelay, 30)); // Minimum 30ms
+        }
+      };
+      speechSynthesis.speak(u);
+    }
+    
+    function addColumn() {
+      var div = document.createElement('div');
+      div.className = 'column-item';
+      var inp = document.createElement('input');
+      inp.type = 'text';
+      inp.placeholder = 'Column name';
+      var btn = document.createElement('button');
+      btn.className = 'delete-btn';
+      btn.innerHTML = '×';
+      btn.onclick = function() { div.remove(); };
+      div.appendChild(inp);
+      div.appendChild(btn);
+      document.getElementById('columnsList').appendChild(div);
+    }
+    
+    function createTrial() {
+      var id = document.getElementById('trialId').value;
+      var date = document.getElementById('trialDate').value;
+      var name = document.getElementById('trialName').value;
+      var trt = parseInt(document.getElementById('numTreatments').value);
+      var rep = parseInt(document.getElementById('numReplicates').value);
+      var sub = parseInt(document.getElementById('numSubplots').value) || 0;
+      
+      if (!id || !date || !name || !trt || !rep) {
+        alert('Please fill all required fields');
+        return;
+      }
+      
+      assessmentColumns = [];
+      var inputs = document.querySelectorAll('#columnsList input');
+      for (var i = 0; i < inputs.length; i++) {
+        if (inputs[i].value.trim()) {
+          assessmentColumns.push(inputs[i].value.trim());
+        }
+      }
+      
+      if (assessmentColumns.length === 0) {
+        alert('Add at least one assessment column');
+        return;
+      }
+      
+      trialData = { trialId: id, trialDate: date, trialName: name, numTreatments: trt, numReplicates: rep, numSubplots: sub };
+      
+      plots = [];
+      for (var r = 1; r <= rep; r++) {
+        for (var t = 1; t <= trt; t++) {
+          var plotNum = r * 100 + t;
+          if (sub > 0) {
+            for (var s = 1; s <= sub; s++) {
+              var p = { plot: plotNum, subplot: s, treatment: t, replicate: r, data: {} };
+              for (var c = 0; c < assessmentColumns.length; c++) {
+                p.data[assessmentColumns[c]] = '';
+              }
+              plots.push(p);
+            }
+          } else {
+            var p = { plot: plotNum, subplot: null, treatment: t, replicate: r, data: {} };
+            for (var c = 0; c < assessmentColumns.length; c++) {
+              p.data[assessmentColumns[c]] = '';
+            }
+            plots.push(p);
+          }
+        }
+      }
+      
+      renderTable();
+      document.getElementById('trialTitle').textContent = name;
+      goToPage2();
+      currentRow = 0;
+      currentCol = 0;
+      updateCurrentCell();
+    }
+    
+    function renderTable() {
+      var table = document.getElementById('dataTable');
+      table.innerHTML = '';
+      var thead = document.createElement('thead');
+      var hrow = document.createElement('tr');
+      var headers = ['Plot'];
+      if (trialData.numSubplots > 0) headers.push('Subplot');
+      headers = headers.concat(assessmentColumns);
+      for (var i = 0; i < headers.length; i++) {
+        var th = document.createElement('th');
+        th.textContent = headers[i];
+        hrow.appendChild(th);
+      }
+      thead.appendChild(hrow);
+      table.appendChild(thead);
+      
+      var tbody = document.createElement('tbody');
+      for (var i = 0; i < plots.length; i++) {
+        var row = document.createElement('tr');
+        var pc = document.createElement('td');
+        pc.textContent = plots[i].plot;
+        row.appendChild(pc);
+        if (trialData.numSubplots > 0) {
+          var sc = document.createElement('td');
+          sc.textContent = plots[i].subplot;
+          row.appendChild(sc);
+        }
+        for (var j = 0; j < assessmentColumns.length; j++) {
+          var cell = document.createElement('td');
+          var inp = document.createElement('input');
+          inp.type = 'number';
+          inp.value = plots[i].data[assessmentColumns[j]];
+          inp.dataset.row = i;
+          inp.dataset.col = assessmentColumns[j];
+          inp.oninput = function(e) {
+            plots[this.dataset.row].data[this.dataset.col] = this.value;
+          };
+          cell.appendChild(inp);
+          row.appendChild(cell);
+        }
+        tbody.appendChild(row);
+      }
+      table.appendChild(tbody);
+    }
+    
+    function updateCurrentCell() {
+      var tds = document.querySelectorAll('td');
+      for (var i = 0; i < tds.length; i++) tds[i].classList.remove('current-cell');
+      var offset = trialData.numSubplots > 0 ? 2 : 1;
+      var rows = document.querySelectorAll('#dataTable tbody tr');
+      if (rows[currentRow]) {
+        var cells = rows[currentRow].querySelectorAll('td');
+        if (cells[currentCol + offset]) {
+          cells[currentCol + offset].classList.add('current-cell');
+          cells[currentCol + offset].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+      var cp = plots[currentRow];
+      var cc = assessmentColumns[currentCol];
+      var disp = trialData.numSubplots > 0 ? 'Plot ' + cp.plot + ' | ' + cp.subplot : 'Plot ' + cp.plot;
+      document.getElementById('currentPlotDisplay').textContent = disp;
+      document.getElementById('fieldModeInfo').textContent = disp + '\n' + cc;
+    }
+    
+    function advanceCell() {
+      var prevPlot = plots[currentRow] ? plots[currentRow].plot : null;
+      currentCol++;
+      if (currentCol >= assessmentColumns.length) {
+        currentCol = 0;
+        currentRow++;
+        if (currentRow >= plots.length) {
+          currentRow = plots.length - 1;
+          speak('Trial complete');
+          stopListening();
+          return;
+        }
+      }
+      playBeep();
+      updateCurrentCell();
+      var cp = plots[currentRow];
+      if (announceEnabled && prevPlot !== cp.plot) {
+        speak(cp.plot.toString());
+      }
+    }
+    
+    function setupSpeechRecognition() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert('Speech recognition not supported. Use Safari or Chrome.');
+        return false;
+      }
+      var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SR();
+      recognition.continuous = true;
+      recognition.interimResults = true; // Changed to true for faster response
+      recognition.lang = 'en-US';
+      recognition.maxAlternatives = 1;
+      
+      var finalTranscript = '';
+      var interimTranscript = '';
+      
+      recognition.onresult = function(e) {
+        interimTranscript = '';
+        for (var i = e.resultIndex; i < e.results.length; i++) {
+          var transcript = e.results[i][0].transcript;
+          if (e.results[i].isFinal) {
+            finalTranscript = transcript;
+            handleVoiceCommand(finalTranscript.trim().toLowerCase());
+            finalTranscript = '';
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+        // Show interim results to user
+        if (interimTranscript) {
+          document.getElementById('statusText').textContent = 'Hearing: ' + interimTranscript + '...';
+        }
+      };
+      
+      recognition.onerror = function(e) {
+        console.log('Recognition error:', e.error);
+        if (e.error === 'not-allowed') {
+          alert('Microphone denied. Check Safari settings.');
+          isListening = false;
+          document.getElementById('status').classList.remove('listening');
+        } else if (e.error === 'no-speech') {
+          // Ignore no-speech errors
+          return;
+        } else if (e.error === 'network') {
+          document.getElementById('statusText').textContent = 'Network error - check connection';
+        }
+      };
+      
+      recognition.onend = function() {
+        if (isListening) {
+          // Restart immediately without delay
+          try { 
+            recognition.start(); 
+          } catch(e) {
+            console.log('Restart error:', e);
+          }
+        }
+      };
+      
+      return true;
+    }
+    
+    function handleVoiceCommand(text) {
+      if (!text) return;
+      
+      console.log('Processing:', text);
+      
+      if (text.includes('start recording')) { startListening(); return; }
+      if (text.includes('pause') || text.includes('stop')) { pauseListening(); return; }
+      if (text.includes('resume') || text.includes('continue')) { resumeListening(); return; }
+      if (text.includes('where am i')) {
+        speak('Plot ' + plots[currentRow].plot + ', ' + assessmentColumns[currentCol]);
+        return;
+      }
+      var m = text.match(/go to plot (\d+)/);
+      if (m) {
+        var idx = plots.findIndex(function(p) { return p.plot === parseInt(m[1]); });
+        if (idx !== -1) {
+          currentRow = idx;
+          currentCol = 0;
+          updateCurrentCell();
+          speak(m[1]);
+        }
+        return;
+      }
+      if (text.includes('undo')) {
+        currentCol--;
+        if (currentCol < 0) {
+          currentRow--;
+          if (currentRow < 0) { currentRow = 0; currentCol = 0; }
+          else { currentCol = assessmentColumns.length - 1; }
+        }
+        plots[currentRow].data[assessmentColumns[currentCol]] = '';
+        renderTable();
+        updateCurrentCell();
+        speak('Plot ' + plots[currentRow].plot);
+        return;
+      }
+      if (text.includes('clear')) {
+        plots[currentRow].data[assessmentColumns[currentCol]] = '';
+        renderTable();
+        updateCurrentCell();
+        return;
+      }
+      if (text.includes('repeat')) {
+        if (lastValue) speak(lastValue);
+        return;
+      }
+      
+      // Enhanced number detection
+      var num = text.match(/(\d+\.?\d*)/);
+      if (num) {
+        var value = num[1];
+        console.log('Recording:', value);
+        plots[currentRow].data[assessmentColumns[currentCol]] = value;
+        lastValue = value;
+        renderTable();
+        document.getElementById('statusText').textContent = 'Recorded: ' + value;
+        advanceCell();
+      } else {
+        // Try word-to-number conversion
+        var wordNums = {
+          'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
+          'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9',
+          'ten': '10', 'fifteen': '15', 'twenty': '20', 'thirty': '30',
+          'forty': '40', 'fifty': '50'
+        };
+        for (var word in wordNums) {
+          if (text.includes(word)) {
+            var value = wordNums[word];
+            console.log('Recording word:', value);
+            plots[currentRow].data[assessmentColumns[currentCol]] = value;
+            lastValue = value;
+            renderTable();
+            document.getElementById('statusText').textContent = 'Recorded: ' + value;
+            advanceCell();
+            return;
+          }
+        }
+        console.log('No number found in:', text);
+      }
+    }
+    
+    function toggleListening() {
+      if (isListening) stopListening();
+      else startListening();
+    }
+    
+    function startListening() {
+      if (!recognition && !setupSpeechRecognition()) return;
+      initAudio();
+      try {
+        isListening = true;
+        recognition.start();
+        document.getElementById('status').classList.add('listening');
+        document.getElementById('statusText').textContent = 'Listening...';
+        // Announce first plot
+        if (plots[currentRow]) {
+          speak(plots[currentRow].plot.toString());
         }
       } catch(e) {
-        console.log('LocalStorage check failed:', e);
+        console.log('Start error:', e);
+        // If already started, just continue
+        if (e.name === 'InvalidStateError') {
+          isListening = true;
+          document.getElementById('status').classList.add('listening');
+          document.getElementById('statusText').textContent = 'Listening...';
+        }
       }
     }
     
-    function saveDataToLocalStorage() {
-      try {
-        var saveData = {
-          trialData: trialData,
-          assessmentColumns: assessmentColumns,
-          plots: plots,
-          currentRow: currentRow,
-          currentCol: currentCol,
-          timestamp: new Date().toISOString()
-        };
-        localStorage.setItem('fieldTrialAutoSave', JSON.stringify(saveData));
-      } catch(e) {
-        console.log('Auto-save failed:', e);
-      }
+    function pauseListening() {
+      isListening = false;
+      if (recognition) recognition.stop();
+      document.getElementById('status').classList.remove('listening');
+      document.getElementById('statusText').textContent = 'Paused';
     }
     
-    function restoreData() {
-      try {
-        var saved = localStorage.getItem('fieldTrial
+    function resumeListening() { startListening(); }
+    
+    function stopListening() {
+      isListening = false;
+      if (recognition) recognition.stop();
+      document.getElementById('status').classList.remove('listening');
+      document.getElementById('statusText').textContent = 'Stopped';
+    }
+    
+    function toggleFieldMode() {
+      document.getElementById('fieldMode').classList.toggle('active');
+    }
+    
+    // Setup field mode exit on load
+    window.addEventListener('load', function() {
+      var exitCorner = document.getElementById('exitCorner');
+      
+      exitCorner.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        var currentTime = new Date().getTime();
+        var tapLength = currentTime - lastTapTime;
+        
+        if (tapLength < 300 && tapLength > 0) {
+          // Double tap detected
+          toggleFieldMode();
+          lastTapTime = 0;
+        } else {
+          // First tap
+          lastTapTime = currentTime;
+        }
+      }, { passive: false });
+    });
+    
+    function showLegend() { document.getElementById('legend').classList.add('active'); }
+    function hideLegend() { document.getElementById('legend').classList.remove('active'); }
+    
+    function goToPage1() {
+      document.getElementById('page2').classList.remove('active');
+      document.getElementById('page1').classList.add('active');
+      stopListening();
+    }
+    
+    function goToPage2() {
+      document.getElementById('page1').classList.remove('active');
+      document.getElementById('page2').classList.add('active');
+    }
+    
+    function updateSpeed(v) {
+      cellSwitchDelay = parseInt(v);
+      document.getElementById('speedValue').textContent = v + 'ms';
+    }
+    
+    function exportCSV() {
+      var csv = 'Trial ID:,' + trialData.trialId + '\n';
+      csv += 'Trial Name:,' + trialData.trialName + '\n';
+      csv += 'Date:,' + trialData.trialDate + '\n';
+      csv += 'Treatments:,' + trialData.numTreatments + '\n';
+      csv += 'Replicates:,' + trialData.numReplicates + '\n';
+      if (trialData.numSubplots > 0) csv += 'Subplots:,' + trialData.numSubplots + '\n';
+      csv += '\n';
+      var h = ['Plot'];
+      if (trialData.numSubplots > 0) h.push('Subplot');
+      csv += h.concat(assessmentColumns).join(',') + '\n';
+      for (var i = 0; i < plots.length; i++) {
+        var row = [plots[i].plot];
+        if (trialData.numSubplots > 0) row.push(plots[i].subplot);
+        for (var j = 0; j < assessmentColumns.length; j++) {
+          row.push(plots[i].data[assessmentColumns[j]] || '');
+        }
+        csv += row.join(',') + '\n';
+      }
+      var blob = new Blob([csv], { type: 'text/csv' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = trialData.trialName + '_' + trialData.trialDate + '.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
