@@ -1,1146 +1,793 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Field Trial Assessment</title>
-<style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  min-height: 100vh;
-  padding: 20px;
-  overflow-x: hidden;
-}
-
-.container {
-  max-width: 800px;
-  margin: 0 auto;
-  background: white;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-  overflow: hidden;
-}
-
-.page {
-  display: none;
-  padding: 30px;
-  animation: fadeIn 0.3s;
-}
-
-.page.active {
-  display: block;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 25px;
-  text-align: center;
-  font-size: 24px;
-  font-weight: bold;
-  letter-spacing: 1px;
-}
-
-.btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  padding: 15px 30px;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  width: 100%;
-  margin: 10px 0;
-  transition: all 0.3s;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-}
-
-.btn:active {
-  transform: scale(0.98);
-  box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
-}
-
-.btn-secondary {
-  background: #6c757d;
-  box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
-}
-
-.btn-danger {
-  background: #dc3545;
-  box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
-}
-
-.form-group {
-  margin: 20px 0;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-  color: #333;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 16px;
-  transition: border 0.3s;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
-.column-item {
-  display: flex;
-  gap: 10px;
-  margin: 10px 0;
-}
-
-.column-item input {
-  flex: 1;
-  padding: 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 16px;
-}
-
-.delete-btn {
-  background: #dc3545;
-  color: white;
-  border: none;
-  width: 45px;
-  border-radius: 8px;
-  font-size: 24px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.delete-btn:active {
-  transform: scale(0.95);
-}
-
-.table-container {
-  overflow-x: auto;
-  margin: 20px 0;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-}
-
-th {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 15px;
-  text-align: left;
-  font-weight: 600;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-td {
-  padding: 12px;
-  border-bottom: 1px solid #e0e0e0;
-  transition: background 0.3s;
-}
-
-td.current-cell {
-  background: #fff3cd !important;
-  box-shadow: inset 0 0 0 3px #ffc107;
-}
-
-td input {
-  width: 100%;
-  padding: 8px;
-  border: 2px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 16px;
-}
-
-td input:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
-.status-bar {
-  background: #f8f9fa;
-  padding: 15px;
-  border-radius: 12px;
-  margin: 20px 0;
-  text-align: center;
-}
-
-.status-bar.listening {
-  background: #d4edda;
-  border: 2px solid #28a745;
-}
-
-#statusText {
-  font-size: 14px;
-  color: #666;
-  margin-top: 5px;
-}
-
-.controls {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin: 20px 0;
-}
-
-.field-mode {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: #1a1a1a;
-  color: white;
-  display: none;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  padding: 40px;
-  text-align: center;
-}
-
-.field-mode.active {
-  display: flex;
-}
-
-.field-mode-info {
-  font-size: 48px;
-  font-weight: bold;
-  margin: 40px 0;
-  line-height: 1.4;
-}
-
-.field-mode-btn {
-  font-size: 24px;
-  padding: 25px 50px;
-  margin: 15px;
-  border-radius: 15px;
-}
-
-.legend {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: white;
-  padding: 30px;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-  z-index: 2000;
-  display: none;
-  max-width: 90%;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-
-.legend.active {
-  display: block;
-}
-
-.legend-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.7);
-  z-index: 1999;
-  display: none;
-}
-
-.legend-overlay.active {
-  display: block;
-}
-
-.legend h3 {
-  margin-bottom: 20px;
-  color: #667eea;
-}
-
-.legend-item {
-  padding: 12px;
-  margin: 8px 0;
-  background: #f8f9fa;
-  border-radius: 8px;
-  display: flex;
-  justify-content: space-between;
-}
-
-.legend-command {
-  font-weight: 600;
-  color: #667eea;
-}
-
-.settings-group {
-  margin: 25px 0;
-  padding: 20px;
-  background: #f8f9fa;
-  border-radius: 12px;
-}
-
-.settings-group h3 {
-  margin-bottom: 15px;
-  color: #333;
-}
-
-.toggle-switch {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 15px 0;
-}
-
-.switch {
-  position: relative;
-  width: 60px;
-  height: 34px;
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  transition: 0.4s;
-  border-radius: 34px;
-}
-
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 26px;
-  width: 26px;
-  left: 4px;
-  bottom: 4px;
-  background-color: white;
-  transition: 0.4s;
-  border-radius: 50%;
-}
-
-input:checked + .slider {
-  background-color: #667eea;
-}
-
-input:checked + .slider:before {
-  transform: translateX(26px);
-}
-
-.speed-control {
-  margin: 15px 0;
-}
-
-.speed-control input[type="range"] {
-  width: 100%;
-  height: 8px;
-  border-radius: 5px;
-  background: #e0e0e0;
-  outline: none;
-  -webkit-appearance: none;
-}
-
-.speed-control input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: #667eea;
-  cursor: pointer;
-}
-
-.speed-label {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: #666;
-  margin-top: 5px;
-}
-
-.trial-list {
-  margin: 20px 0;
-}
-
-.trial-item {
-  background: #f8f9fa;
-  padding: 15px;
-  margin: 10px 0;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s;
-  border: 2px solid transparent;
-}
-
-.trial-item:active {
-  transform: scale(0.98);
-  border-color: #667eea;
-}
-
-.trial-item-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.trial-id {
-  font-weight: bold;
-  color: #667eea;
-  font-size: 18px;
-}
-
-.trial-name {
-  font-size: 16px;
-  color: #333;
-  margin: 5px 0;
-}
-
-.trial-date {
-  font-size: 14px;
-  color: #666;
-}
-
-.trial-delete {
-  background: #dc3545;
-  color: white;
-  border: none;
-  padding: 8px 15px;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-  color: #999;
-}
-
-.empty-state-icon {
-  font-size: 64px;
-  margin-bottom: 20px;
-}
-
-@media (max-width: 600px) {
-  .container {
-    border-radius: 0;
-  }
-  
-  .page {
-    padding: 20px;
-  }
-  
-  .controls {
-    grid-template-columns: 1fr;
-  }
-  
-  .field-mode-info {
-    font-size: 32px;
-  }
-  
-  .field-mode-btn {
-    font-size: 18px;
-    padding: 20px 40px;
-  }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Field Trial Data Collector</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f5;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .container { max-width: 600px; margin: 0 auto; background: white; min-height: 100vh; }
+    .header { background: #007AFF; color: white; padding: 20px; text-align: center; }
+    .page { display: none; padding: 20px; }
+    .page.active { display: block; }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; margin-bottom: 5px; font-weight: 600; color: #333; }
+    input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+    .btn {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+      touch-action: manipulation;
+    }
+    .btn-primary { background: #007AFF; color: white; }
+    .btn-success { background: #34C759; color: white; }
+    .btn-secondary { background: #8E8E93; color: white; }
+    .btn-danger { background: #FF3B30; color: white; }
+    .assessment-columns { margin-top: 20px; }
+    .column-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      padding: 10px;
+      background: #f9f9f9;
+      border-radius: 8px;
+    }
+    .column-item input { flex: 1; }
+    .delete-btn {
+      background: #FF3B30;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .controls button { flex: 1; min-width: 120px; padding: 12px; }
+    .status { padding: 15px; background: #f0f0f0; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+    .status.listening { background: #34C759; color: white; }
+    .current-plot { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
+    .spreadsheet { overflow-x: auto; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+    th { background: #f0f0f0; font-weight: 600; position: sticky; top: 0; }
+    td.current-cell { background: #007AFF; color: white; }
+    td input { width: 100%; border: none; text-align: center; padding: 5px; }
+    .field-mode {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: black;
+      color: white;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 1000;
+    }
+    .field-mode.active { display: flex; }
+    .field-mode-info { font-size: 48px; font-weight: bold; text-align: center; opacity: 0.3; }
+    .exit-corner {
+      position: fixed;
+      bottom: 0; right: 0;
+      width: 100px; height: 100px;
+      background: rgba(255, 59, 48, 0.3);
+      border-top-left-radius: 100px;
+    }
+    .exit-instruction {
+      position: fixed;
+      bottom: 20px; right: 20px;
+      background: rgba(255, 59, 48, 0.8);
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+    .legend {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 999;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    .legend.active { display: block; }
+    .legend-content { background: white; border-radius: 12px; padding: 20px; max-width: 500px; margin: 0 auto; }
+    .legend-item { padding: 10px; margin-bottom: 10px; background: #f9f9f9; border-radius: 8px; }
+    .legend-command { font-weight: bold; color: #007AFF; }
+    .toggle-group {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .switch { position: relative; width: 50px; height: 28px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc;
+      transition: 0.4s;
+      border-radius: 28px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px; width: 20px;
+      left: 4px; bottom: 4px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider { background-color: #34C759; }
+    input:checked + .slider:before { transform: translateX(22px); }
+    .trial-list-item {
+      background: #f9f9f9;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      border-left: 4px solid #007AFF;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .trial-list-item:active { background: #e0e0e0; }
+    .trial-item-name { font-weight: bold; font-size: 16px; margin-bottom: 5px; }
+    .trial-item-details { font-size: 14px; color: #666; }
+    .empty-state { text-align: center; padding: 40px 20px; color: #999; }
+    .auto-save-indicator {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: #34C759;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 100;
+    }
+    .auto-save-indicator.show { opacity: 1; }
+  </style>
 </head>
 <body>
   <div class="container">
-  <div class="header">Field Trial Assessment</div>
-
-  <!-- Page 0: Home / Trial List -->
-  <div id="page0" class="page active">
-    <h2 style="margin-bottom: 20px;">Previous Trials</h2>
-    <div id="trialList" class="trial-list"></div>
-    <button class="btn" onclick="startNewTrial()">+ New Assessment</button>
-  </div>
-
-  <!-- Page 1: Trial Setup -->
-  <div id="page1" class="page">
-    <button class="btn btn-secondary" onclick="goToPage(0)">← Back to Home</button>
+    <div id="autoSaveIndicator" class="auto-save-indicator">✓ Saved</div>
     
-    <div class="form-group">
-      <label>Trial ID</label>
-      <input type="text" id="trialId" placeholder="Enter trial ID">
-    </div>
-    
-    <div class="form-group">
-      <label>Trial Name</label>
-      <input type="text" id="trialName" placeholder="Enter trial name">
-    </div>
-    
-    <div class="form-group">
-      <label>Assessment Date</label>
-      <input type="date" id="assessmentDate">
-    </div>
-    
-    <div class="form-group">
-      <label>Number of Rows</label>
-      <input type="number" id="numRows" value="10" min="1">
-    </div>
-    
-    <div class="form-group">
-      <label>Number of Columns</label>
-      <input type="number" id="numCols" value="5" min="1">
-    </div>
-    
-    <h3 style="margin-top: 30px;">Column Names</h3>
-    <div id="columnNames"></div>
-    <button class="btn btn-secondary" onclick="addColumn()">+ Add Column</button>
-    
-    <button class="btn" onclick="generateTable()" style="margin-top: 30px;">Generate Table</button>
-  </div>
-
-  <!-- Page 2: Data Entry -->
-  <div id="page2" class="page">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h3 id="trialInfo"></h3>
-      <button class="btn btn-secondary" onclick="goToPage(1)" style="width: auto; padding: 10px 20px;">Edit Setup</button>
-    </div>
-    
-    <div class="status-bar" id="statusBar">
-      <div style="font-size: 18px; font-weight: bold;" id="currentPosition">Ready</div>
-      <div id="statusText">Tap "Start Voice" to begin</div>
-    </div>
-    
-    <div class="controls">
-      <button class="btn" id="voiceBtn" onclick="toggleVoice()">🎤 Start Voice</button>
-      <button class="btn btn-secondary" onclick="toggleFieldMode()">📱 Field Mode</button>
-      <button class="btn btn-secondary" onclick="showLegend()">📖 Commands</button>
-      <button class="btn btn-secondary" onclick="goToPage(3)">⚙️ Settings</button>
-    </div>
-    
-    <div class="table-container">
-      <table id="dataTable"></table>
-    </div>
-    
-    <div class="controls">
-      <button class="btn" onclick="exportCSV()">📥 Export CSV</button>
-      <button class="btn btn-danger" onclick="clearData()">🗑️ Clear Data</button>
-    </div>
-  </div>
-
-  <!-- Page 3: Settings -->
-  <div id="page3" class="page">
-    <button class="btn btn-secondary" onclick="goToPage(2)">← Back to Data Entry</button>
-    
-    <div class="settings-group">
-      <h3>Voice Recognition</h3>
-      
-      <div class="toggle-switch">
-        <span>Auto-advance after entry</span>
-        <label class="switch">
-          <input type="checkbox" id="autoAdvance" checked>
-          <span class="slider"></span>
-        </label>
+    <div id="page0" class="page active">
+      <div class="header"><h1>Field Trials</h1></div>
+      <div style="padding: 20px;">
+        <button class="btn btn-primary" onclick="startNewTrial()">+ New Assessment</button>
+        <h3 style="margin: 20px 0 10px 0;">Previous Assessments</h3>
+        <div id="trialList"></div>
       </div>
-      
-      <div class="toggle-switch">
-        <span>Voice feedback</span>
-        <label class="switch">
-          <input type="checkbox" id="voiceFeedback" checked>
-          <span class="slider"></span>
-        </label>
-      </div>
-      
-      <div class="speed-control">
-        <label>Speech Rate</label>
-        <input type="range" id="speechRate" min="0.5" max="2" step="0.1" value="1">
-        <div class="speed-label">
-          <span>Slow</span>
-          <span id="rateValue">1.0x</span>
-          <span>Fast</span>
+    </div>
+    
+    <div id="page1" class="page">
+      <div class="header"><h1>Trial Setup</h1></div>
+      <div style="padding: 20px;">
+        <button class="btn btn-secondary" onclick="goToPage0()">← Back to List</button>
+        <div class="form-group" style="margin-top: 20px;">
+          <label>Trial ID</label>
+          <input type="text" id="trialId">
         </div>
+        <div class="form-group">
+          <label>Date of Assessment</label>
+          <input type="date" id="trialDate">
+        </div>
+        <div class="form-group">
+          <label>Trial Name</label>
+          <input type="text" id="trialName">
+        </div>
+        <div class="form-group">
+          <label>Number of Treatments</label>
+          <input type="number" id="numTreatments" min="1">
+        </div>
+        <div class="form-group">
+          <label>Number of Replicates</label>
+          <input type="number" id="numReplicates" min="1">
+        </div>
+        <div class="form-group">
+          <label>Number of Subplots per Plot (optional)</label>
+          <input type="number" id="numSubplots" min="1">
+        </div>
+        <div class="assessment-columns">
+          <label>Assessment Columns</label>
+          <div id="columnsList"></div>
+          <button class="btn btn-secondary" onclick="addColumn()">+ Add Assessment Column</button>
+        </div>
+        <button class="btn btn-primary" onclick="createTrial()">Create Trial</button>
       </div>
     </div>
     
-    <div class="settings-group">
-      <h3>Navigation</h3>
-      
-      <div class="toggle-switch">
-        <span>Confirm before moving</span>
-        <label class="switch">
-          <input type="checkbox" id="confirmMove">
-          <span class="slider"></span>
-        </label>
-      </div>
-      
-      <div class="toggle-switch">
-        <span>Wrap around edges</span>
-        <label class="switch">
-          <input type="checkbox" id="wrapAround" checked>
-          <span class="slider"></span>
-        </label>
+    <div id="page2" class="page">
+      <div class="header"><h1 id="trialTitle">Data Collection</h1></div>
+      <div style="padding: 20px;">
+        <button class="btn btn-secondary" onclick="goToPage0()">← Back to List</button>
+        <div class="toggle-group" style="margin-top: 20px;">
+          <span>Announce Plot Changes</span>
+          <label class="switch">
+            <input type="checkbox" id="announceToggle" onchange="announceEnabled = this.checked">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="form-group">
+          <label>Cell Switching Speed</label>
+          <input type="range" id="speedSlider" min="0" max="500" value="30" step="10" oninput="updateSpeed(this.value)">
+          <div style="display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-top: 5px;">
+            <span>Instant</span>
+            <span id="speedValue">30ms</span>
+            <span>Slow</span>
+          </div>
+        </div>
+        <div class="controls">
+          <button class="btn btn-success" onclick="toggleListening()">Start Recording</button>
+          <button class="btn btn-secondary" onclick="toggleFieldMode()">Field Mode</button>
+          <button class="btn btn-secondary" onclick="showLegend()">Commands</button>
+          <button class="btn btn-primary" onclick="exportCSV()">Export CSV</button>
+        </div>
+        <div class="status" id="status">
+          <div class="current-plot" id="currentPlotDisplay">Plot: ---</div>
+          <div id="statusText">Press "Start Recording" to begin</div>
+        </div>
+        <div class="spreadsheet">
+          <table id="dataTable"></table>
+        </div>
+        <button class="btn btn-danger" onclick="deleteTrial()">Delete This Trial</button>
+        <button class="btn btn-secondary" onclick="goToPage0()">← Back to List</button>
       </div>
     </div>
-    
-    <div class="settings-group">
-      <h3>Data Entry</h3>
-      
-      <div class="toggle-switch">
-        <span>Auto-save</span>
-        <label class="switch">
-          <input type="checkbox" id="autoSave" checked>
-          <span class="slider"></span>
-        </label>
-      </div>
+  </div>
+  
+  <div class="field-mode" id="fieldMode">
+    <div class="field-mode-info" id="fieldModeInfo">Plot 101</div>
+    <div class="exit-corner" id="exitCorner"></div>
+    <div class="exit-instruction">Double-tap bottom-right to exit</div>
+  </div>
+  
+  <div class="legend" id="legend">
+    <div class="legend-content">
+      <h2>Voice Commands</h2>
+      <div class="legend-item"><div class="legend-command">"Pause"</div><div>Pause listening</div></div>
+      <div class="legend-item"><div class="legend-command">"Resume"</div><div>Resume listening</div></div>
+      <div class="legend-item"><div class="legend-command">"Go to plot [number]"</div><div>Jump to plot</div></div>
+      <div class="legend-item"><div class="legend-command">"Where am I"</div><div>Announce current plot</div></div>
+      <div class="legend-item"><div class="legend-command">"Undo"</div><div>Go back one cell</div></div>
+      <div class="legend-item"><div class="legend-command">"Clear"</div><div>Clear current cell</div></div>
+      <div class="legend-item"><div class="legend-command">"Repeat"</div><div>Repeat last value</div></div>
+      <div class="legend-item"><div class="legend-command">[Number]</div><div>Record and advance</div></div>
+      <button class="btn btn-primary" onclick="hideLegend()">Close</button>
     </div>
   </div>
-</div>
 
-<!-- Field Mode Overlay -->
-<div id="fieldMode" class="field-mode">
-  <div class="field-mode-info">
-    <div id="fieldPosition">Row 1, Column 1</div>
-    <div id="fieldValue" style="font-size: 64px; margin: 40px 0;">-</div>
-  </div>
-  <button class="btn field-mode-btn" onclick="toggleVoice()">🎤 Toggle Voice</button>
-  <button class="btn btn-secondary field-mode-btn" onclick="toggleFieldMode()">← Exit Field Mode</button>
-</div>
-
-<!-- Legend Overlay -->
-<div class="legend-overlay" id="legendOverlay" onclick="hideLegend()"></div>
-<div class="legend" id="legend">
-  <h3>Voice Commands</h3>
-  <div class="legend-item">
-    <span class="legend-command">"Next" or "Right"</span>
-    <span>Move to next cell</span>
-  </div>
-  <div class="legend-item">
-    <span class="legend-command">"Previous" or "Left"</span>
-    <span>Move to previous cell</span>
-  </div>
-  <div class="legend-item">
-    <span class="legend-command">"Down"</span>
-    <span>Move down one row</span>
-  </div>
-  <div class="legend-item">
-    <span class="legend-command">"Up"</span>
-    <span>Move up one row</span>
-  </div>
-  <div class="legend-item">
-    <span class="legend-command">"Row [number]"</span>
-    <span>Jump to specific row</span>
-  </div>
-  <div class="legend-item">
-    <span class="legend-command">"Column [number]"</span>
-    <span>Jump to specific column</span>
-  </div>
-  <div class="legend-item">
-    <span class="legend-command">"Delete" or "Clear"</span>
-    <span>Clear current cell</span>
-  </div>
-  <div class="legend-item">
-    <span class="legend-command">"Repeat"</span>
-    <span>Repeat current position</span>
-  </div>
-  <div class="legend-item">
-    <span class="legend-command">Any number/text</span>
-    <span>Enter data in current cell</span>
-  </div>
-  <button class="btn" onclick="hideLegend()" style="margin-top: 20px;">Close</button>
-</div>
-
-<script>
-  // Global variables
-let currentRow = 0;
-let currentCol = 0;
-let recognition = null;
-let isListening = false;
-let tableData = [];
-let trialConfig = {};
-let synth = window.speechSynthesis;
-let currentTrialId = null;
-
-// Initialize
-document.addEventListener('DOMContentLoaded', function() {
-  setTodayDate();
-  loadTrials();
-  initSpeechRecognition();
-  initSettings();
-  updateColumnInputs();
-});
-
-function setTodayDate() {
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('assessmentDate').value = today;
-}
-
-function initSettings() {
-  document.getElementById('speechRate').addEventListener('input', function(e) {
-    document.getElementById('rateValue').textContent = e.target.value + 'x';
-  });
-}
-
-function updateColumnInputs() {
-  const numCols = parseInt(document.getElementById('numCols').value) || 5;
-  const container = document.getElementById('columnNames');
-  container.innerHTML = '';
-  
-  for (let i = 0; i < numCols; i++) {
-    const div = document.createElement('div');
-    div.className = 'column-item';
-    div.innerHTML = `
-      <input type="text" placeholder="Column ${i + 1} name" value="Column ${i + 1}" id="col${i}">
-      ${i > 0 ? '<button class="delete-btn" onclick="removeColumn(this)">×</button>' : ''}
-    `;
-    container.appendChild(div);
-  }
-}
-
-document.getElementById('numCols').addEventListener('input', updateColumnInputs);
-
-function addColumn() {
-  const numCols = parseInt(document.getElementById('numCols').value) || 5;
-  document.getElementById('numCols').value = numCols + 1;
-  updateColumnInputs();
-}
-
-function removeColumn(btn) {
-  btn.parentElement.remove();
-  const numCols = document.querySelectorAll('.column-item').length;
-  document.getElementById('numCols').value = numCols;
-}
-
-function generateTable() {
-  const trialId = document.getElementById('trialId').value.trim();
-  const trialName = document.getElementById('trialName').value.trim();
-  const assessmentDate = document.getElementById('assessmentDate').value;
-  const numRows = parseInt(document.getElementById('numRows').value);
-  const numCols = document.querySelectorAll('.column-item').length;
-  
-  if (!trialId || !trialName) {
-    speak('Please enter trial ID and name');
-    return;
-  }
-  
-  const columnNames = [];
-  for (let i = 0; i < numCols; i++) {
-    const input = document.getElementById(`col${i}`);
-    columnNames.push(input ? input.value : `Column ${i + 1}`);
-  }
-  
-  trialConfig = {
-    trialId,
-    trialName,
-    assessmentDate,
-    numRows,
-    numCols,
-    columnNames,
-    createdDate: new Date().toISOString()
-  };
-  
-  currentTrialId = trialId;
-  
-  tableData = Array(numRows).fill().map(() => Array(numCols).fill(''));
-  
-  const table = document.getElementById('dataTable');
-  table.innerHTML = '';
-  
-  const thead = table.createTHead();
-  const headerRow = thead.insertRow();
-  headerRow.insertCell().textContent = 'Row';
-  columnNames.forEach(name => {
-    const th = document.createElement('th');
-    th.textContent = name;
-    headerRow.appendChild(th);
-  });
-  
-  const tbody = table.createTBody();
-  for (let i = 0; i < numRows; i++) {
-    const row = tbody.insertRow();
-    const rowHeader = row.insertCell();
-    rowHeader.textContent = i + 1;
-    rowHeader.style.fontWeight = 'bold';
-    rowHeader.style.background = '#f8f9fa';
+  <script>
+    var currentTrialId = null;
+    var trialData = {};
+    var assessmentColumns = [];
+    var plots = [];
+    var currentRow = 0;
+    var currentCol = 0;
+    var isListening = false;
+    var recognition = null;
+    var lastValue = '';
+    var announceEnabled = false;
+    var audioContext = null;
+    var cellSwitchDelay = 30;
+    var lastTapTime = 0;
+    var saveTimeout = null;
     
-    for (let j = 0; j < numCols; j++) {
-      const cell = row.insertCell();
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.dataset.row = i;
-      input.dataset.col = j;
-      input.value = tableData[i][j];
-      input.addEventListener('input', function() {
-        tableData[i][j] = this.value;
-        if (document.getElementById('autoSave').checked) {
-          saveTrial();
+    loadTrialList();
+    
+    function showAutoSave() {
+      var ind = document.getElementById('autoSaveIndicator');
+      ind.classList.add('show');
+      setTimeout(function() { ind.classList.remove('show'); }, 1500);
+    }
+    
+    function saveCurrentTrial() {
+      if (!currentTrialId) return;
+      var trial = {
+        id: currentTrialId,
+        trialData: trialData,
+        assessmentColumns: assessmentColumns,
+        plots: plots,
+        currentRow: currentRow,
+        currentCol: currentCol,
+        lastModified: new Date().toISOString()
+      };
+      localStorage.setItem('trial_' + currentTrialId, JSON.stringify(trial));
+      showAutoSave();
+    }
+    
+    function debounceSave() {
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(saveCurrentTrial, 500);
+    }
+    
+    function loadTrialList() {
+      var list = document.getElementById('trialList');
+      list.innerHTML = '';
+      var trials = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var key = localStorage.key(i);
+        if (key.startsWith('trial_')) {
+          try {
+            trials.push(JSON.parse(localStorage.getItem(key)));
+          } catch(e) {}
         }
+      }
+      trials.sort(function(a, b) { return new Date(b.lastModified) - new Date(a.lastModified); });
+      if (trials.length === 0) {
+        list.innerHTML = '<div class="empty-state">No assessments yet.<br>Click "+ New Assessment" to start.</div>';
+        return;
+      }
+      trials.forEach(function(trial) {
+        var item = document.createElement('div');
+        item.className = 'trial-list-item';
+        item.onclick = function() { loadTrial(trial.id); };
+        var name = document.createElement('div');
+        name.className = 'trial-item-name';
+        name.textContent = trial.trialData.trialName;
+        var details = document.createElement('div');
+        details.className = 'trial-item-details';
+        details.textContent = 'ID: ' + trial.trialData.trialId + ' | Date: ' + trial.trialData.trialDate;
+        item.appendChild(name);
+        item.appendChild(details);
+        list.appendChild(item);
       });
-      cell.appendChild(input);
     }
-  }
-  
-  currentRow = 0;
-  currentCol = 0;
-  updateCurrentCell();
-  
-  document.getElementById('trialInfo').textContent = `${trialName} (${trialId})`;
-  
-  saveTrial();
-  goToPage(2);
-  speak('Table generated. Ready to start.');
-}
-
-function updateCurrentCell() {
-  document.querySelectorAll('td').forEach(td => td.classList.remove('current-cell'));
-  
-  const cell = document.querySelector(`input[data-row="${currentRow}"][data-col="${currentCol}"]`);
-  if (cell) {
-    cell.parentElement.classList.add('current-cell');
-    cell.focus();
     
-    const colName = trialConfig.columnNames[currentCol];
-    document.getElementById('currentPosition').textContent = 
-      `Row ${currentRow + 1}, ${colName}`;
-    document.getElementById('fieldPosition').textContent = 
-      `Row ${currentRow + 1}, ${colName}`;
-    document.getElementById('fieldValue').textContent = 
-      tableData[currentRow][currentCol] || '-';
-  }
-}
-
-function initSpeechRecognition() {
-  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-    console.error('Speech recognition not supported');
-    return;
-  }
-  
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  recognition = new SpeechRecognition();
-  recognition.continuous = true;
-  recognition.interimResults = false;
-  recognition.lang = 'en-US';
-  
-  recognition.onresult = function(event) {
-    const last = event.results.length - 1;
-    const command = event.results[last][0].transcript.toLowerCase().trim();
+    function loadTrial(id) {
+      var saved = localStorage.getItem('trial_' + id);
+      if (!saved) return;
+      try {
+        var trial = JSON.parse(saved);
+        currentTrialId = id;
+        trialData = trial.trialData;
+        assessmentColumns = trial.assessmentColumns;
+        plots = trial.plots;
+        currentRow = trial.currentRow || 0;
+        currentCol = trial.currentCol || 0;
+        renderTable();
+        document.getElementById('trialTitle').textContent = trialData.trialName;
+        updateCurrentCell();
+        goToPage2();
+      } catch(e) {
+        alert('Error loading trial');
+      }
+    }
     
-    document.getElementById('statusText').textContent = `Heard: "${command}"`;
-    processCommand(command);
-  };
-  
-  recognition.onerror = function(event) {
-    console.error('Speech recognition error:', event.error);
-    if (event.error === 'no-speech') {
-      document.getElementById('statusText').textContent = 'No speech detected. Try again.';
+    function deleteTrial() {
+      if (!currentTrialId) return;
+      if (!confirm('Delete this trial? Cannot be undone.')) return;
+      localStorage.removeItem('trial_' + currentTrialId);
+      currentTrialId = null;
+      goToPage0();
     }
-  };
-  
-  recognition.onend = function() {
-    if (isListening) {
-      recognition.start();
+    
+    function startNewTrial() {
+      currentTrialId = null;
+      document.getElementById('trialId').value = '';
+      document.getElementById('trialName').value = '';
+      document.getElementById('numTreatments').value = '';
+      document.getElementById('numReplicates').value = '';
+      document.getElementById('numSubplots').value = '';
+      document.getElementById('columnsList').innerHTML = '';
+      addColumn();
+      goToPage1();
     }
-  };
-}
-
-function toggleVoice() {
-  if (!recognition) {
-    speak('Speech recognition not available');
-    return;
-  }
-  
-  isListening = !isListening;
-  const btn = document.getElementById('voiceBtn');
-  const statusBar = document.getElementById('statusBar');
-  
-  if (isListening) {
-    recognition.start();
-    btn.textContent = '⏸️ Stop Voice';
-    btn.classList.remove('btn');
-    btn.classList.add('btn-danger');
-    statusBar.classList.add('listening');
-    document.getElementById('statusText').textContent = 'Listening...';
-    speak('Voice recognition started');
-  } else {
-    recognition.stop();
-    btn.textContent = '🎤 Start Voice';
-    btn.classList.remove('btn-danger');
-    btn.classList.add('btn');
-    statusBar.classList.remove('listening');
-    document.getElementById('statusText').textContent = 'Voice recognition stopped';
-    speak('Voice recognition stopped');
-  }
-}
-
-function processCommand(command) {
-  const numMatch = command.match(/\d+/);
-  
-  if (command.includes('next') || command.includes('right')) {
-    moveNext();
-  } else if (command.includes('previous') || command.includes('left') || command.includes('back')) {
-    movePrevious();
-  } else if (command.includes('down')) {
-    moveDown();
-  } else if (command.includes('up')) {
-    moveUp();
-  } else if (command.includes('row') && numMatch) {
-    jumpToRow(parseInt(numMatch[0]) - 1);
-  } else if (command.includes('column') && numMatch) {
-    jumpToColumn(parseInt(numMatch[0]) - 1);
-  } else if (command.includes('delete') || command.includes('clear')) {
-    clearCurrentCell();
-  } else if (command.includes('repeat')) {
-    repeatPosition();
-  } else {
-    enterData(command);
-  }
-}
-
-function moveNext() {
-  const confirmMove = document.getElementById('confirmMove').checked;
-  if (confirmMove && !confirm('Move to next cell?')) return;
-  
-  currentCol++;
-  if (currentCol >= trialConfig.numCols) {
-    if (document.getElementById('wrapAround').checked) {
-      currentCol = 0;
-      currentRow++;
-      if (currentRow >= trialConfig.numRows) {
-        currentRow = 0;
+    
+    function initAudio() {
+      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioContext.state === 'suspended') audioContext.resume();
+    }
+    
+    function playBeep() {
+      try {
+        initAudio();
+        var osc = audioContext.createOscillator();
+        var gain = audioContext.createGain();
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.5, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+        osc.start(audioContext.currentTime);
+        osc.stop(audioContext.currentTime + 0.15);
+      } catch (e) {}
+    }
+    
+    function speak(text) {
+      if (!announceEnabled) return;
+      var wasListening = isListening;
+      if (wasListening && recognition) {
+        recognition.stop();
+        isListening = false;
       }
-    } else {
-      currentCol = trialConfig.numCols - 1;
-      speak('End of row');
-      return;
+      var u = new SpeechSynthesisUtterance(text);
+      u.rate = 2.0;
+      u.volume = 0.8;
+      u.onend = function() {
+        if (wasListening) {
+          setTimeout(function() {
+            try {
+              isListening = true;
+              recognition.start();
+            } catch(e) {}
+          }, Math.max(cellSwitchDelay, 20));
+        }
+      };
+      speechSynthesis.speak(u);
     }
-  }
-  updateCurrentCell();
-  speak(`Row ${currentRow + 1}, ${trialConfig.columnNames[currentCol]}`);
-}
-
-function movePrevious() {
-  currentCol--;
-  if (currentCol < 0) {
-    if (document.getElementById('wrapAround').checked) {
-      currentCol = trialConfig.numCols - 1;
-      currentRow--;
-      if (currentRow < 0) {
-        currentRow = trialConfig.numRows - 1;
+    
+    function addColumn() {
+      var div = document.createElement('div');
+      div.className = 'column-item';
+      var inp = document.createElement('input');
+      inp.type = 'text';
+      inp.placeholder = 'Column name';
+      var btn = document.createElement('button');
+      btn.className = 'delete-btn';
+      btn.innerHTML = '×';
+      btn.onclick = function() { div.remove(); };
+      div.appendChild(inp);
+      div.appendChild(btn);
+      document.getElementById('columnsList').appendChild(div);
+    }
+    
+    function createTrial() {
+      var id = document.getElementById('trialId').value;
+      var date = document.getElementById('trialDate').value;
+      var name = document.getElementById('trialName').value;
+      var trt = parseInt(document.getElementById('numTreatments').value);
+      var rep = parseInt(document.getElementById('numReplicates').value);
+      var sub = parseInt(document.getElementById('numSubplots').value) || 0;
+      if (!id || !date || !name || !trt || !rep) {
+        alert('Please fill all required fields');
+        return;
       }
-    } else {
+      assessmentColumns = [];
+      var inputs = document.querySelectorAll('#columnsList input');
+      for (var i = 0; i < inputs.length; i++) {
+        if (inputs[i].value.trim()) {
+          assessmentColumns.push(inputs[i].value.trim());
+        }
+      }
+      if (assessmentColumns.length === 0) {
+        alert('Add at least one assessment column');
+        return;
+      }
+      currentTrialId = id + '_' + Date.now();
+      trialData = { trialId: id, trialDate: date, trialName: name, numTreatments: trt, numReplicates: rep, numSubplots: sub };
+      plots = [];
+      for (var r = 1; r <= rep; r++) {
+        for (var t = 1; t <= trt; t++) {
+          var plotNum = r * 100 + t;
+          if (sub > 0) {
+            for (var s = 1; s <= sub; s++) {
+              var p = { plot: plotNum, subplot: s, treatment: t, replicate: r, data: {} };
+              for (var c = 0; c < assessmentColumns.length; c++) {
+                p.data[assessmentColumns[c]] = '';
+              }
+              plots.push(p);
+            }
+          } else {
+            var p = { plot: plotNum, subplot: null, treatment: t, replicate: r, data: {} };
+            for (var c = 0; c < assessmentColumns.length; c++) {
+              p.data[assessmentColumns[c]] = '';
+            }
+            plots.push(p);
+          }
+        }
+      }
+      currentRow = 0;
       currentCol = 0;
-      speak('Start of row');
-      return;
+      saveCurrentTrial();
+      renderTable();
+      document.getElementById('trialTitle').textContent = name;
+      updateCurrentCell();
+      goToPage2();
     }
-  }
-  updateCurrentCell();
-  speak(`Row ${currentRow + 1}, ${trialConfig.columnNames[currentCol]}`);
-}
-
-function moveDown() {
-  currentRow++;
-  if (currentRow >= trialConfig.numRows) {
-    if (document.getElementById('wrapAround').checked) {
-      currentRow = 0;
-    } else {
-      currentRow = trialConfig.numRows - 1;
-      speak('Last row');
-      return;
+    
+    function renderTable() {
+      var table = document.getElementById('dataTable');
+      table.innerHTML = '';
+      var thead = document.createElement('thead');
+      var hrow = document.createElement('tr');
+      var headers = ['Plot'];
+      if (trialData.numSubplots > 0) headers.push('Subplot');
+      headers = headers.concat(assessmentColumns);
+      for (var i = 0; i < headers.length; i++) {
+        var th = document.createElement('th');
+        th.textContent = headers[i];
+        hrow.appendChild(th);
+      }
+      thead.appendChild(hrow);
+      table.appendChild(thead);
+      var tbody = document.createElement('tbody');
+      for (var i = 0; i < plots.length; i++) {
+        var row = document.createElement('tr');
+        var pc = document.createElement('td');
+        pc.textContent = plots[i].plot;
+        row.appendChild(pc);
+        if (trialData.numSubplots > 0) {
+          var sc = document.createElement('td');
+          sc.textContent = plots[i].subplot;
+          row.appendChild(sc);
+        }
+        for (var j = 0; j < assessmentColumns.length; j++) {
+          var cell = document.createElement('td');
+          var inp = document.createElement('input');
+          inp.type = 'number';
+          inp.value = plots[i].data[assessmentColumns[j]];
+          inp.dataset.row = i;
+          inp.dataset.col = assessmentColumns[j];
+          inp.oninput = function(e) {
+            plots[this.dataset.row].data[this.dataset.col] = this.value;
+            debounceSave();
+          };
+          cell.appendChild(inp);
+          row.appendChild(cell);
+        }
+        tbody.appendChild(row);
+      }
+      table.appendChild(tbody);
     }
-  }
-  updateCurrentCell();
-  speak(`Row ${currentRow + 1}`);
-}
-
-function moveUp() {
-  currentRow--;
-  if (currentRow < 0) {
-    if (document.getElementById('wrapAround').checked) {
-      currentRow = trialConfig.numRows - 1;
-    } else {
-      currentRow = 0;
-      speak('First row');
-      return;
+    
+    function updateCurrentCell() {
+      var tds = document.querySelectorAll('td');
+      for (var i = 0; i < tds.length; i++) tds[i].classList.remove('current-cell');
+      var offset = trialData.numSubplots > 0 ? 2 : 1;
+      var rows = document.querySelectorAll('#dataTable tbody tr');
+      if (rows[currentRow]) {
+        var cells = rows[currentRow].querySelectorAll('td');
+        if (cells[currentCol + offset]) {
+          cells[currentCol + offset].classList.add('current-cell');
+          cells[currentCol + offset].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+      var cp = plots[currentRow];
+      var cc = assessmentColumns[currentCol];
+      var disp = trialData.numSubplots > 0 ? 'Plot ' + cp.plot + ' | ' + cp.subplot : 'Plot ' + cp.plot;
+      document.getElementById('currentPlotDisplay').textContent = disp;
+      document.getElementById('fieldModeInfo').textContent = disp + '\n' + cc;
     }
-  }
-  updateCurrentCell();
-  speak(`Row ${currentRow + 1}`);
-}
-
-function jumpToRow(row) {
-  if (row >= 0 && row < trialConfig.numRows) {
-    currentRow = row;
-    updateCurrentCell();
-    speak(`Jumped to row ${row + 1}`);
-  } else {
-    speak('Invalid row number');
-  }
-}
-
-function jumpToColumn(col) {
-  if (col >= 0 && col < trialConfig.numCols) {
-    currentCol = col;
-    updateCurrentCell();
-    speak(`Jumped to ${trialConfig.columnNames[col]}`);
-  } else {
-    speak('Invalid column number');
-  }
-}
-
-function clearCurrentCell() {
-  tableData[currentRow][currentCol] = '';
-  const input = document.querySelector(`input[data-row="${currentRow}"][data-col="${currentCol}"]`);
-  if (input) {
-    input.value = '';
-  }
-  document.getElementById('fieldValue').textContent = '-';
-  speak('Cleared');
-  if (document.getElementById('autoSave').checked) {
-    saveTrial();
-  }
-}
-
-function repeatPosition() {
-  speak(`Row ${currentRow + 1}, ${trialConfig.columnNames[currentCol]}. Current value: ${tableData[currentRow][currentCol] || 'empty'}`);
-}
-
-function enterData(value) {
-  tableData[currentRow][currentCol] = value;
-  const input = document.querySelector(`input[data-row="${currentRow}"][data-col="${currentCol}"]`);
-  if (input) {
-    input.value = value;
-  }
-  document.getElementById('fieldValue').textContent = value;
-  
-  if (document.getElementById('voiceFeedback').checked) {
-    speak(`Entered ${value}`);
-  }
-  
-  if (document.getElementById('autoSave').checked) {
-    saveTrial();
-  }
-  
-  if (document.getElementById('autoAdvance').checked) {
-    setTimeout(moveNext, 500);
-  }
-}
-
-function speak(text) {
-  if (!document.getElementById('voiceFeedback').checked) return;
-  
-  synth.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = parseFloat(document.getElementById('speechRate').value);
-  synth.speak(utterance);
-}
-
-function exportCSV() {
-  let csv = trialConfig.columnNames.join(',') + '\n';
-  tableData.forEach((row, i) => {
-    csv += row.join(',') + '\n';
-  });
-  
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${trialConfig.trialId}_${trialConfig.assessmentDate}.csv`;
-  a.click();
-  
-  speak('Data exported');
-}
-
-function clearData() {
-  if (!confirm('Clear all data? This cannot be undone.')) return;
-  
-  tableData = tableData.map(row => row.map(() => ''));
-  document.querySelectorAll('#dataTable input').forEach(input => input.value = '');
-  currentRow = 0;
-  currentCol = 0;
-  updateCurrentCell();
-  
-  if (document.getElementById('autoSave').checked) {
-    saveTrial();
-  }
-  
-  speak('All data cleared');
-}
-
-function toggleFieldMode() {
-  const fieldMode = document.getElementById('fieldMode');
-  fieldMode.classList.toggle('active');
-  
-  if (fieldMode.classList.contains('active')) {
-    speak('Field mode activated');
-  } else {
-    speak('Field mode deactivated');
-  }
-}
-
-function showLegend() {
-  document.getElementById('legend').classList.add('active');
-  document.getElementById('legendOverlay').classList.add('active');
-}
-
-function hideLegend() {
-  document.getElementById('legend').classList.remove('active');
-  document.getElementById('legendOverlay').classList.remove('active');
-}
-
-function goToPage(pageNum) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(`page${pageNum}`).classList.add('active');
-  
-  if (pageNum === 0) {
-    loadTrials();
-  }
-}
-
-function saveTrial() {
-  if (!currentTrialId) return;
-  
-  const trial = {
-    ...trialConfig,
-    tableData,
-    lastModified: new Date().toISOString()
-  };
-  
-  localStorage.setItem(`trial_${currentTrialId}`, JSON.stringify(trial));
-}
-
-function loadTrials() {
-  const trialList = document.getElementById('trialList');
-  trialList.innerHTML = '';
-  
-  const trials = [];
-  for (let i = 0; i < localStorage.length; i++)
+    
+    function advanceCell() {
+      var prevPlot = plots[currentRow] ? plots[currentRow].plot : null;
+      currentCol++;
+      if (currentCol >= assessmentColumns.length) {
+        currentCol = 0;
+        currentRow++;
+        if (currentRow >= plots.length) {
+          currentRow = plots.length - 1;
+          speak('Trial complete');
+          stopListening();
+          return;
+        }
+      }
+      playBeep();
+      updateCurrentCell();
+      debounceSave();
+      var cp = plots[currentRow];
+      if (announceEnabled && prevPlot !== cp.plot) {
+        speak(cp.plot.toString());
+      }
+    }
+    
+    function setupSpeechRecognition() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert('Speech not supported');
+        return false;
+      }
+      var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SR();
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+      recognition.maxAlternatives = 1;
+      recognition.onresult = function(e) {
+        for (var i = e.resultIndex; i < e.results.length; i++) {
+          if (e.results[i].isFinal) {
+            handleVoiceCommand(e.results[i][0].transcript.trim().toLowerCase());
+          }
+        }
+      };
+      recognition.onerror = function(e) {
+        if (e.error === 'not-allowed') {
+          alert('Microphone denied');
+          isListening = false;
+        }
+      };
+      recognition.onend = function() {
+        if (isListening) {
+          try { recognition.start(); } catch(e) {}
+        }
+      };
+      return true;
+    }
+    
+    function handleVoiceCommand(text) {
+      if (!text) return;
+      if (text.includes('pause') || text.includes('stop')) { pauseListening(); return; }
+      if (text.includes('resume') || text.includes('continue')) { resumeListening(); return; }
+      if (text.includes('where')) { speak('Plot ' + plots[currentRow].plot); return; }
+      var m = text.match(/plot (\d+)/);
+      if (m) {
+        var idx = plots.findIndex(function(p) { return p.plot === parseInt(m[1]); });
+        if (idx !== -1) {
+          currentRow = idx;
+          currentCol = 0;
+          updateCurrentCell();
+          speak(m[1]);
+        }
+        return;
+      }
+      if (text.includes('undo')) {
+        currentCol--;
+        if (currentCol < 0) {
+          currentRow--;
+          if (currentRow < 0) { currentRow = 0; currentCol = 0; }
+          else { currentCol = assessmentColumns.length - 1; }
+        }
+        plots[currentRow].data[assessmentColumns[currentCol]] = '';
+        renderTable();
+        updateCurrentCell();
+        debounceSave();
+        return;
+      }
+      if (text.includes('clear')) {
+        plots[currentRow].data[assessmentColumns[currentCol]] = '';
+        renderTable();
+        updateCurrentCell();
+        debounceSave();
+        return;
+      }
+      if (text.includes('repeat')) {
+        if (lastValue) speak(lastValue);
+        return;
+      }
+      var num = text.match(/(\d+\.?\d*)/);
+      if (num) {
+        var value = num[1];
+        plots[currentRow].data[assessmentColumns[currentCol]] = value;
+        lastValue = value;
+        renderTable();
+        advanceCell();
+      }
+    }
+    
+    function toggleListening() {
+      if (isListening) stopListening();
+      else startListening();
+    }
+    
+    function startListening() {
+      if (!recognition && !setupSpeechRecognition()) return;
+      initAudio();
+      try {
+        isListening = true;
+        recognition.start();
+        document.getElementById('status').classList.add('listening');
+        document.getElementById('statusText').textContent = 'Listening...';
+        if (plots[currentRow] && announceEnabled) {
+          speak(plots[currentRow].plot.toString());
+        }
+      } catch(e) {}
+    }
+    
+    function pauseListening() {
+      isListening = false;
+      if (recognition) recognition.stop();
+      document.getElementById('status').classList.remove('listening');
+      document.getElementById('statusText').textContent = 'Paused';
+    }
+    
+    function resumeListening() { startListening(); }
+    
+    function stopListening() {
+      isListening = false;
+      if (recognition) recognition.stop();
+      document.getElementById('status').classList.remove('listening');
+      document.getElementById('statusText').textContent = 'Stopped';
+    }
+    
+    function toggleFieldMode() {
+      document.getElementById('fieldMode').classList.toggle('active');
+    }
+    
+    window.addEventListener('load', function() {
+      var exitCorner = document.getElementById('exitCorner');
+      exitCorner.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var currentTime = new Date().getTime();
+        var tapLength = currentTime - lastTapTime;
+        if (tapLength < 300 && tapLength > 0) {
+          toggleFieldMode();
+          lastTapTime = 0;
+        } else {
+          lastTapTime = currentTime;
+        }
+      }, { passive: false });
+      document.getElementById('trialDate').valueAsDate = new Date();
+    });
+    
+    function showLegend() { document.getElementById('legend').classList.add('active'); }
+    function hideLegend() { document.getElementById('legend').classList.remove('active'); }
+    
+    function goToPage0() {
+      document.getElementById('page2').classList.remove('active');
+      document.getElementById('page1').classList.remove('active');
+      document.getElementById('page0').classList.add('active');
+      stopListening();
+      loadTrialList();
+    }
+    
+    function goToPage1() {
+      document.getElementById('page0').classList.remove('active');
+      document.getElementById('page2').classList.remove('active');
+      document.getElementById('page1').classList.add('active');
+      document.getElementById('trialDate').valueAsDate = new Date();
+    }
+    
+    function goToPage2() {
+      document.getElementById('page0').classList.remove('active');
+      document.getElementById('page1').classList.remove('active');
+      document.getElementById('page2').classList.add('active');
+    }
+    
+    function updateSpeed(v) {
+      cellSwitchDelay = parseInt(v);
+      document.getElementById('speedValue').textContent = v + 'ms';
+    }
+    
+    function exportCSV() {
+      var csv = 'Trial ID:,' + trialData.trialId + '\n';
+      csv += 'Trial Name:,' + trialData.trialName + '\n';
+      csv += 'Date:,' + trialData.trialDate + '\n';
+      csv += 'Treatments:,' + trialData.numTreatments + '\n';
+      csv += 'Replicates:,' + trialData.numReplicates + '\n';
+      if (trialData.numSubplots > 0) csv += 'Subplots:,' + trialData.numSubplots + '\n';
+      csv += '\n';
+      var h = ['Plot'];
+      if (trialData.numSubplots > 0) h.push('Subplot');
+      csv += h.concat(assessmentColumns).join(',') + '\n';
+      for (var i = 0; i < plots.length; i++) {
+        var row = [plots[i].plot];
+        if (trialData.numSubplots > 0) row.push(plots[i].subplot);
+        for (var j = 0; j < assessmentColumns.length; j++) {
+          row.push(plots[i].data[assessmentColumns[j]] || '');
+        }
+        csv += row.join(',') + '\n';
+      }
+      var blob = new Blob([csv], { type: 'text/csv' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = trialData.trialName + '_' + trialData.trialDate + '.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
