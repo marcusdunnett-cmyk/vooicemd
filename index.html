@@ -2,294 +2,202 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>Field Trial Data Collector</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Field Trial Voice Assistant</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #f5f5f5;
-      -webkit-user-select: none;
-      user-select: none;
-    }
-    .container { max-width: 600px; margin: 0 auto; background: white; min-height: 100vh; }
-    .header { background: #007AFF; color: white; padding: 20px; text-align: center; }
-    .page { display: none; padding: 20px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px 12px 0 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .header h1 { font-size: 28px; font-weight: 600; }
+    .page { display: none; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
     .page.active { display: block; }
-    .form-group { margin-bottom: 20px; }
-    label { display: block; margin-bottom: 5px; font-weight: 600; color: #333; }
-    input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
-    .btn {
-      width: 100%;
-      padding: 15px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 10px;
-      touch-action: manipulation;
-    }
-    .btn-primary { background: #007AFF; color: white; }
-    .btn-success { background: #34C759; color: white; }
-    .btn-secondary { background: #8E8E93; color: white; }
-    .btn-danger { background: #FF3B30; color: white; }
-    .assessment-columns { margin-top: 20px; }
-    .column-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 10px;
-      padding: 10px;
-      background: #f9f9f9;
-      border-radius: 8px;
-    }
+    .btn { padding: 12px 24px; border: none; border-radius: 8px; font-size: 16px; font-weight: 500; cursor: pointer; transition: all 0.3s; margin: 5px; }
+    .btn-primary { background: #667eea; color: white; }
+    .btn-primary:hover { background: #5568d3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(102,126,234,0.3); }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; transform: translateY(-2px); }
+    .btn-danger { background: #ef4444; color: white; }
+    .btn-danger:hover { background: #dc2626; transform: translateY(-2px); }
+    .btn-secondary { background: #6b7280; color: white; }
+    .btn-secondary:hover { background: #4b5563; transform: translateY(-2px); }
+    .form-group { margin: 20px 0; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: #374151; }
+    .form-group input, .form-group select { width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; transition: border-color 0.3s; }
+    .form-group input:focus { outline: none; border-color: #667eea; }
+    .column-item { display: flex; gap: 10px; margin: 10px 0; }
     .column-item input { flex: 1; }
-    .delete-btn {
-      background: #FF3B30;
-      color: white;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-    .controls button { flex: 1; min-width: 120px; padding: 12px; }
-    .status { padding: 15px; background: #f0f0f0; border-radius: 8px; margin-bottom: 20px; text-align: center; }
-    .status.listening { background: #34C759; color: white; }
-    .current-plot { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
-    .spreadsheet { overflow-x: auto; margin-bottom: 20px; }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-    th { background: #f0f0f0; font-weight: 600; position: sticky; top: 0; }
-    td.current-cell { background: #007AFF; color: white; }
-    td input { width: 100%; border: none; text-align: center; padding: 5px; }
-    .field-mode {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: black;
-      color: white;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      z-index: 1000;
-    }
-    .field-mode.active { display: flex; }
-    .field-mode-info { font-size: 48px; font-weight: bold; text-align: center; opacity: 0.3; }
-    .exit-corner {
-      position: fixed;
-      bottom: 0; right: 0;
-      width: 150px; height: 150px;
-      background: rgba(255, 59, 48, 0.6);
-      border-top-left-radius: 150px;
-      display: flex;
-      align-items: flex-end;
-      justify-content: flex-end;
-      padding: 20px;
-      font-size: 24px;
-      font-weight: bold;
-      color: white;
-    }
-    .exit-corner::after {
-      content: "EXIT";
-      position: absolute;
-      bottom: 30px;
-      right: 30px;
-      animation: pulse 2s infinite;
-    }
-    .exit-instruction {
-      position: fixed;
-      bottom: 160px;
-      right: 20px;
-      background: rgba(255, 59, 48, 0.9);
-      color: white;
-      padding: 15px 20px;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: bold;
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-    .legend {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.8);
-      z-index: 999;
-      overflow-y: auto;
-      padding: 20px;
-    }
-    .legend.active { display: block; }
-    .legend-content { background: white; border-radius: 12px; padding: 20px; max-width: 500px; margin: 0 auto; }
-    .legend-item { padding: 10px; margin-bottom: 10px; background: #f9f9f9; border-radius: 8px; }
-    .legend-command { font-weight: bold; color: #007AFF; }
-    .toggle-group {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 15px;
-      background: #f9f9f9;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-    .switch { position: relative; width: 50px; height: 28px; }
+    .delete-btn { background: #ef4444; color: white; border: none; border-radius: 8px; padding: 12px 20px; cursor: pointer; font-size: 18px; font-weight: bold; }
+    .delete-btn:hover { background: #dc2626; }
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
+    .status { background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea; }
+    .status.listening { border-left-color: #10b981; background: #d1fae5; }
+    .current-plot { font-size: 20px; font-weight: 600; color: #1f2937; margin-bottom: 10px; }
+    .spreadsheet { overflow-x: auto; margin: 20px 0; border-radius: 8px; border: 1px solid #e5e7eb; }
+    table { width: 100%; border-collapse: collapse; background: white; }
+    th { background: #f9fafb; padding: 12px; text-align: left; font-weight: 600; color: #374151; border-bottom: 2px solid #e5e7eb; position: sticky; top: 0; }
+    td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
+    .current-cell { background: #fef3c7 !important; border: 3px solid #f59e0b !important; font-weight: 600; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.4); } 50% { box-shadow: 0 0 0 8px rgba(245,158,11,0); } }
+    .field-mode { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); z-index: 1000; }
+    .field-mode.active { display: flex; align-items: center; justify-content: center; }
+    .field-mode-info { color: white; font-size: 120px; font-weight: bold; text-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    .exit-corner { position: fixed; bottom: 20px; right: 20px; width: 120px; height: 120px; background: #ef4444; border-radius: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: bold; box-shadow: 0 8px 24px rgba(239,68,68,0.4); transition: all 0.3s; }
+    .exit-corner:hover { background: #dc2626; transform: scale(1.05); }
+    .exit-corner::before { content: 'EXIT'; }
+    .exit-instruction { position: fixed; bottom: 160px; right: 20px; color: white; font-size: 16px; background: rgba(0,0,0,0.3); padding: 8px 16px; border-radius: 8px; }
+    .legend { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; }
+    .legend.active { display: flex; }
+    .legend-content { background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; }
+    .legend-content h2 { margin-bottom: 20px; color: #1f2937; }
+    .legend-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #e5e7eb; }
+    .legend-command { font-weight: 600; color: #667eea; }
+    .trial-list-item { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; cursor: pointer; transition: all 0.3s; border-left: 4px solid #667eea; }
+    .trial-list-item:hover { transform: translateX(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .trial-item-name { font-size: 18px; font-weight: 600; color: #1f2937; margin-bottom: 5px; }
+    .trial-item-details { font-size: 14px; color: #6b7280; }
+    .empty-state { text-align: center; padding: 60px 20px; color: #9ca3af; font-size: 18px; }
+    .toggle-group { display: flex; align-items: center; gap: 15px; margin: 20px 0; }
+    .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
     .switch input { opacity: 0; width: 0; height: 0; }
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: #ccc;
-      transition: 0.4s;
-      border-radius: 28px;
-    }
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 20px; width: 20px;
-      left: 4px; bottom: 4px;
-      background-color: white;
-      transition: 0.4s;
-      border-radius: 50%;
-    }
-    input:checked + .slider { background-color: #34C759; }
-    input:checked + .slider:before { transform: translateX(22px); }
-    .trial-list-item {
-      background: #f9f9f9;
-      padding: 15px;
-      margin-bottom: 10px;
-      border-radius: 8px;
-      border-left: 4px solid #007AFF;
-      cursor: pointer;
-      touch-action: manipulation;
-    }
-    .trial-list-item:active { background: #e0e0e0; }
-    .trial-item-name { font-weight: bold; font-size: 16px; margin-bottom: 5px; }
-    .trial-item-details { font-size: 14px; color: #666; }
-    .empty-state { text-align: center; padding: 40px 20px; color: #999; }
-    .auto-save-indicator {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      background: #34C759;
-      color: white;
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 12px;
-      opacity: 0;
-      transition: opacity 0.3s;
-      z-index: 100;
-    }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+    .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: #10b981; }
+    input:checked + .slider:before { transform: translateX(26px); }
+    .auto-save-indicator { position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(16,185,129,0.3); opacity: 0; transition: opacity 0.3s; z-index: 3000; }
     .auto-save-indicator.show { opacity: 1; }
   </style>
 </head>
 <body>
+  <div class="auto-save-indicator" id="autoSaveIndicator">✓ Saved</div>
+  
   <div class="container">
-    <div id="autoSaveIndicator" class="auto-save-indicator">✓ Saved</div>
-    
     <div id="page0" class="page active">
-      <div class="header"><h1>Field Trials</h1></div>
+      <div class="header"><h1>Field Trial Voice Assistant</h1></div>
       <div style="padding: 20px;">
-        <button class="btn btn-primary" onclick="startNewTrial()">+ New Assessment</button>
-        <h3 style="margin: 20px 0 10px 0;">Previous Assessments</h3>
+        <button class="btn btn-primary" id="newAssessmentBtn">+ New Assessment</button>
         <div id="trialList"></div>
       </div>
     </div>
-    
+
     <div id="page1" class="page">
-      <div class="header"><h1>Trial Setup</h1></div>
+      <div class="header"><h1>Create New Assessment</h1></div>
       <div style="padding: 20px;">
-        <button class="btn btn-secondary" onclick="goToPage0()">← Back to List</button>
-        <div class="form-group" style="margin-top: 20px;">
-          <label>Trial ID</label>
-          <input type="text" id="trialId">
+        <button class="btn btn-secondary" id="backToListBtn">← Back to List</button>
+        <div class="form-group">
+          <label>Trial ID *</label>
+          <input type="text" id="trialId" placeholder="e.g., TRIAL2024-001">
         </div>
         <div class="form-group">
-          <label>Date of Assessment</label>
+          <label>Trial Date *</label>
           <input type="date" id="trialDate">
         </div>
         <div class="form-group">
-          <label>Trial Name</label>
-          <input type="text" id="trialName">
+          <label>Trial Name *</label>
+          <input type="text" id="trialName" placeholder="e.g., Corn Yield Trial">
         </div>
         <div class="form-group">
-          <label>Number of Treatments</label>
-          <input type="number" id="numTreatments" min="1">
+          <label>Number of Treatments *</label>
+          <input type="number" id="numTreatments" min="1" placeholder="e.g., 10">
         </div>
         <div class="form-group">
-          <label>Number of Replicates</label>
-          <input type="number" id="numReplicates" min="1">
+          <label>Number of Replicates *</label>
+          <input type="number" id="numReplicates" min="1" placeholder="e.g., 4">
         </div>
         <div class="form-group">
-          <label>Number of Subplots per Plot (optional)</label>
-          <input type="number" id="numSubplots" min="1">
+          <label>Number of Subplots (0 if none)</label>
+          <input type="number" id="numSubplots" min="0" value="0" placeholder="0">
         </div>
-        <div class="assessment-columns">
-          <label>Assessment Columns</label>
+        <div class="form-group">
+          <label>Assessment Columns *</label>
           <div id="columnsList"></div>
-          <button class="btn btn-secondary" onclick="addColumn()">+ Add Assessment Column</button>
+          <button class="btn btn-secondary" id="addColumnBtn">+ Add Column</button>
         </div>
-        <button class="btn btn-primary" onclick="createTrial()">Create Trial</button>
+        <button class="btn btn-primary" id="createTrialBtn">Create Assessment</button>
       </div>
     </div>
         <div id="page2" class="page">
-      <div class="header"><h1 id="trialTitle">Data Collection</h1></div>
+      <div class="header">
+        <h1 id="trialTitle">Assessment</h1>
+      </div>
       <div style="padding: 20px;">
-        <button class="btn btn-secondary" onclick="goToPage0()">← Back to List</button>
-        <div class="toggle-group" style="margin-top: 20px;">
-          <span>Announce Plot Changes</span>
+        <button class="btn btn-secondary" id="backToListBtn2">← Back to List</button>
+        <button class="btn btn-danger" id="deleteTrialBtn">Delete This Trial</button>
+        
+        <div class="toggle-group">
+          <label style="font-weight: 600;">Announce Plot Numbers:</label>
           <label class="switch">
-            <input type="checkbox" id="announceToggle" onchange="announceEnabled = this.checked">
+            <input type="checkbox" id="announceToggle">
             <span class="slider"></span>
           </label>
         </div>
+        
         <div class="form-group">
-          <label>Cell Switching Speed</label>
-          <input type="range" id="speedSlider" min="0" max="500" value="30" step="10" oninput="updateSpeed(this.value)">
-          <div style="display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-top: 5px;">
-            <span>Instant</span>
-            <span id="speedValue">30ms</span>
-            <span>Slow</span>
-          </div>
+          <label>Cell Switch Delay (ms): <span id="speedValue">800ms</span></label>
+          <input type="range" id="speedSlider" min="0" max="2000" value="800" step="100" style="width: 100%;">
         </div>
+        
         <div class="controls">
-          <button class="btn btn-success" onclick="toggleListening()">Start Recording</button>
-          <button class="btn btn-secondary" onclick="toggleFieldMode()">Field Mode</button>
-          <button class="btn btn-secondary" onclick="showLegend()">Commands</button>
-          <button class="btn btn-primary" onclick="exportCSV()">Export CSV</button>
+          <button class="btn btn-success" id="toggleListeningBtn">Start Recording</button>
+          <button class="btn btn-secondary" id="fieldModeBtn">Field Mode</button>
+          <button class="btn btn-secondary" id="showLegendBtn">Voice Commands</button>
+          <button class="btn btn-primary" id="exportBtn">Export CSV</button>
         </div>
+        
         <div class="status" id="status">
-          <div class="current-plot" id="currentPlotDisplay">Plot: ---</div>
-          <div id="statusText">Press "Start Recording" to begin</div>
+          <div class="current-plot" id="currentPlotDisplay">Ready</div>
+          <div id="statusText">Click "Start Recording" to begin</div>
         </div>
+        
         <div class="spreadsheet">
           <table id="dataTable"></table>
         </div>
-        <button class="btn btn-danger" onclick="deleteTrial()">Delete This Trial</button>
-        <button class="btn btn-secondary" onclick="goToPage0()">← Back to List</button>
       </div>
     </div>
   </div>
-  
+
   <div class="field-mode" id="fieldMode">
     <div class="field-mode-info" id="fieldModeInfo">Plot 101</div>
+    <div class="exit-instruction">Double-tap EXIT to leave</div>
     <div class="exit-corner" id="exitCorner"></div>
-    <div class="exit-instruction">Double-tap bottom-right to exit</div>
   </div>
-  
+
   <div class="legend" id="legend">
     <div class="legend-content">
       <h2>Voice Commands</h2>
-      <div class="legend-item"><div class="legend-command">"Pause"</div><div>Pause listening</div></div>
-      <div class="legend-item"><div class="legend-command">"Resume"</div><div>Resume listening</div></div>
-      <div class="legend-item"><div class="legend-command">"Go to plot [number]"</div><div>Jump to plot</div></div>
-      <div class="legend-item"><div class="legend-command">"Where am I"</div><div>Announce current plot</div></div>
-      <div class="legend-item"><div class="legend-command">"Undo"</div><div>Go back one cell</div></div>
-      <div class="legend-item"><div class="legend-command">"Clear"</div><div>Clear current cell</div></div>
-      <div class="legend-item"><div class="legend-command">"Repeat"</div><div>Repeat last value</div></div>
-      <div class="legend-item"><div class="legend-command">[Number]</div><div>Record and advance</div></div>
-      <button class="btn btn-primary" onclick="hideLegend()">Close</button>
+      <div class="legend-item">
+        <span class="legend-command">Say any number</span>
+        <span>Records value & advances</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-command">"Plot [number]"</span>
+        <span>Jump to specific plot</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-command">"Where"</span>
+        <span>Announces current plot</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-command">"Undo"</span>
+        <span>Go back one cell & clear</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-command">"Clear"</span>
+        <span>Clear current cell</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-command">"Repeat"</span>
+        <span>Repeat last value</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-command">"Pause"</span>
+        <span>Pause listening</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-command">"Resume"</span>
+        <span>Resume listening</span>
+      </div>
+      <button class="btn btn-primary" id="closeLegendBtn" style="width: 100%; margin-top: 20px;">Close</button>
     </div>
   </div>
 
@@ -300,36 +208,125 @@
     var plots = [];
     var currentRow = 0;
     var currentCol = 0;
-    var isListening = false;
     var recognition = null;
+    var isListening = false;
     var lastValue = '';
+    var cellSwitchDelay = 800;
     var announceEnabled = false;
     var audioContext = null;
-    var cellSwitchDelay = 30;
+    var beepOscillator = null;
     var lastTapTime = 0;
+    var synth = window.speechSynthesis;
     var saveTimeout = null;
     
-    loadTrialList();
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      loadTrialList();
+      setupEventListeners();
+      addInitialColumn();
+    });
     
-    function showAutoSave() {
-      var ind = document.getElementById('autoSaveIndicator');
-      ind.classList.add('show');
-      setTimeout(function() { ind.classList.remove('show'); }, 1500);
+    function setupEventListeners() {
+      document.getElementById('newAssessmentBtn').addEventListener('click', startNewTrial);
+      document.getElementById('backToListBtn').addEventListener('click', goToPage0);
+      document.getElementById('backToListBtn2').addEventListener('click', goToPage0);
+      document.getElementById('addColumnBtn').addEventListener('click', addColumn);
+      document.getElementById('createTrialBtn').addEventListener('click', createTrial);
+      document.getElementById('toggleListeningBtn').addEventListener('click', toggleListening);
+      document.getElementById('fieldModeBtn').addEventListener('click', toggleFieldMode);
+      document.getElementById('showLegendBtn').addEventListener('click', showLegend);
+      document.getElementById('closeLegendBtn').addEventListener('click', hideLegend);
+      document.getElementById('exportBtn').addEventListener('click', exportCSV);
+      document.getElementById('deleteTrialBtn').addEventListener('click', deleteTrial);
+      document.getElementById('speedSlider').addEventListener('input', function(e) { updateSpeed(e.target.value); });
+      document.getElementById('announceToggle').addEventListener('change', function(e) { announceEnabled = e.target.checked; });
+      document.getElementById('exitCorner').addEventListener('click', handleExitCorner);
+    }
+    
+    function startNewTrial() {
+      goToPage1();
+    }
+    
+    function addInitialColumn() {
+      addColumn();
+    }
+    
+    function addColumn() {
+      var container = document.getElementById('columnsList');
+      var div = document.createElement('div');
+      div.className = 'column-item';
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = 'e.g., Plant Height';
+      var btn = document.createElement('button');
+      btn.className = 'delete-btn';
+      btn.textContent = '×';
+      btn.onclick = function() { container.removeChild(div); };
+      div.appendChild(input);
+      div.appendChild(btn);
+      container.appendChild(div);
+    }
+    
+    function loadTrialList() {
+      var list = document.getElementById('trialList');
+      list.innerHTML = '';
+      var keys = Object.keys(localStorage).filter(function(k) { return k.startsWith('trial_'); });
+      if (keys.length === 0) {
+        list.innerHTML = '<div class="empty-state">No assessments yet. Click "+ New Assessment" to start.</div>';
+        return;
+      }
+      keys.forEach(function(key) {
+        try {
+          var data = JSON.parse(localStorage.getItem(key));
+          var item = document.createElement('div');
+          item.className = 'trial-list-item';
+          item.innerHTML = '<div class="trial-item-name">' + data.trialData.trialName + '</div>' +
+                           '<div class="trial-item-details">ID: ' + data.trialData.trialId + ' | Date: ' + data.trialData.trialDate + ' | ' + data.plots.length + ' plots</div>';
+          item.onclick = function() { loadTrial(key); };
+          list.appendChild(item);
+        } catch(e) {
+          console.error('Error loading trial:', e);
+        }
+      });
+    }
+    
+    function loadTrial(key) {
+      try {
+        var data = JSON.parse(localStorage.getItem(key));
+        currentTrialId = key;
+        trialData = data.trialData;
+        assessmentColumns = data.assessmentColumns;
+        plots = data.plots;
+        currentRow = data.currentRow || 0;
+        currentCol = data.currentCol || 0;
+        renderTable();
+        updateCurrentCell();
+        document.getElementById('trialTitle').textContent = trialData.trialName;
+        goToPage2();
+      } catch(e) {
+        alert('Error loading trial: ' + e.message);
+      }
     }
     
     function saveCurrentTrial() {
       if (!currentTrialId) return;
-      var trial = {
-        id: currentTrialId,
+      var data = {
         trialData: trialData,
         assessmentColumns: assessmentColumns,
         plots: plots,
         currentRow: currentRow,
-        currentCol: currentCol,
-        lastModified: new Date().toISOString()
+        currentCol: currentCol
       };
-      localStorage.setItem('trial_' + currentTrialId, JSON.stringify(trial));
-      showAutoSave();
+      try {
+        localStorage.setItem(currentTrialId, JSON.stringify(data));
+        showAutoSaveIndicator();
+      } catch(e) {
+        if (e.name === 'QuotaExceededError') {
+          alert('Storage full! Please export and delete old trials.');
+        } else {
+          console.error('Save error:', e);
+        }
+      }
     }
     
     function debounceSave() {
@@ -337,369 +334,60 @@
       saveTimeout = setTimeout(saveCurrentTrial, 500);
     }
     
-    function loadTrialList() {
-      var list = document.getElementById('trialList');
-      list.innerHTML = '';
-      var trials = [];
-      for (var i = 0; i < localStorage.length; i++) {
-        var key = localStorage.key(i);
-        if (key.startsWith('trial_')) {
-          try {
-            trials.push(JSON.parse(localStorage.getItem(key)));
-          } catch(e) {}
-        }
-      }
-      trials.sort(function(a, b) { return new Date(b.lastModified) - new Date(a.lastModified); });
-      if (trials.length === 0) {
-        list.innerHTML = '<div class="empty-state">No assessments yet.<br>Click "+ New Assessment" to start.</div>';
-        return;
-      }
-      trials.forEach(function(trial) {
-        var item = document.createElement('div');
-        item.className = 'trial-list-item';
-        item.onclick = function() { loadTrial(trial.id); };
-        var name = document.createElement('div');
-        name.className = 'trial-item-name';
-        name.textContent = trial.trialData.trialName;
-        var details = document.createElement('div');
-        details.className = 'trial-item-details';
-        details.textContent = 'ID: ' + trial.trialData.trialId + ' | Date: ' + trial.trialData.trialDate;
-        item.appendChild(name);
-        item.appendChild(details);
-        list.appendChild(item);
-      });
-    }
-    
-    function loadTrial(id) {
-      var saved = localStorage.getItem('trial_' + id);
-      if (!saved) return;
-      try {
-        var trial = JSON.parse(saved);
-        currentTrialId = id;
-        trialData = trial.trialData;
-        assessmentColumns = trial.assessmentColumns;
-        plots = trial.plots;
-        currentRow = trial.currentRow || 0;
-        currentCol = trial.currentCol || 0;
-        renderTable();
-        document.getElementById('trialTitle').textContent = trialData.trialName;
-        updateCurrentCell();
-        goToPage2();
-      } catch(e) {
-        alert('Error loading trial');
-      }
+    function showAutoSaveIndicator() {
+      var indicator = document.getElementById('autoSaveIndicator');
+      indicator.classList.add('show');
+      setTimeout(function() { indicator.classList.remove('show'); }, 2000);
     }
     
     function deleteTrial() {
       if (!currentTrialId) return;
-      if (!confirm('Delete this trial? Cannot be undone.')) return;
-      localStorage.removeItem('trial_' + currentTrialId);
-      currentTrialId = null;
+      if (!confirm('Delete this trial permanently? This cannot be undone.')) return;
+      localStorage.removeItem(currentTrialId);
       goToPage0();
     }
     
-    function startNewTrial() {
-      currentTrialId = null;
-      document.getElementById('trialId').value = '';
-      document.getElementById('trialName').value = '';
-      document.getElementById('numTreatments').value = '';
-      document.getElementById('numReplicates').value = '';
-      document.getElementById('numSubplots').value = '';
-      document.getElementById('columnsList').innerHTML = '';
-      addColumn();
-      goToPage1();
-    }
-    
     function initAudio() {
-      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioContext.state === 'suspended') audioContext.resume();
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
     }
     
     function playBeep() {
-      try {
-        initAudio();
-        var osc = audioContext.createOscillator();
-        var gain = audioContext.createGain();
-        osc.connect(gain);
-        gain.connect(audioContext.destination);
-        osc.frequency.value = 880;
-        gain.gain.setValueAtTime(0.5, audioContext.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
-        osc.start(audioContext.currentTime);
-        osc.stop(audioContext.currentTime + 0.15);
-      } catch (e) {}
+      if (!audioContext) return;
+      var osc = audioContext.createOscillator();
+      var gain = audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.frequency.value = 800;
+      gain.gain.value = 0.1;
+      osc.start();
+      osc.stop(audioContext.currentTime + 0.1);
     }
     
     function speak(text) {
       if (!announceEnabled) return;
+      synth.cancel();
       var wasListening = isListening;
       if (wasListening && recognition) {
         recognition.stop();
         isListening = false;
       }
       var u = new SpeechSynthesisUtterance(text);
-      u.rate = 2.0;
-      u.volume = 0.8;
+      u.rate = 1.2;
       u.onend = function() {
         if (wasListening) {
           setTimeout(function() {
-            try {
-              isListening = true;
-              recognition.start();
-            } catch(e) {}
-          }, Math.max(cellSwitchDelay, 20));
+            if (recognition) {
+              try {
+                recognition.start();
+                isListening = true;
+              } catch(e) {}
+            }
+          }, Math.max(cellSwitchDelay, 100));
         }
       };
-      speechSynthesis.speak(u);
-    }
-    
-    function addColumn() {
-      var div = document.createElement('div');
-      div.className = 'column-item';
-      var inp = document.createElement('input');
-      inp.type = 'text';
-      inp.placeholder = 'Column name';
-      var btn = document.createElement('button');
-      btn.className = 'delete-btn';
-      btn.innerHTML = '×';
-      btn.onclick = function() { div.remove(); };
-      div.appendChild(inp);
-      div.appendChild(btn);
-      document.getElementById('columnsList').appendChild(div);
-    }
-        <div id="page2" class="page">
-      <div class="header"><h1 id="trialTitle">Data Collection</h1></div>
-      <div style="padding: 20px;">
-        <button class="btn btn-secondary" onclick="goToPage0()">← Back to List</button>
-        <div class="toggle-group" style="margin-top: 20px;">
-          <span>Announce Plot Changes</span>
-          <label class="switch">
-            <input type="checkbox" id="announceToggle" onchange="announceEnabled = this.checked">
-            <span class="slider"></span>
-          </label>
-        </div>
-        <div class="form-group">
-          <label>Cell Switching Speed</label>
-          <input type="range" id="speedSlider" min="0" max="500" value="30" step="10" oninput="updateSpeed(this.value)">
-          <div style="display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-top: 5px;">
-            <span>Instant</span>
-            <span id="speedValue">30ms</span>
-            <span>Slow</span>
-          </div>
-        </div>
-        <div class="controls">
-          <button class="btn btn-success" onclick="toggleListening()">Start Recording</button>
-          <button class="btn btn-secondary" onclick="toggleFieldMode()">Field Mode</button>
-          <button class="btn btn-secondary" onclick="showLegend()">Commands</button>
-          <button class="btn btn-primary" onclick="exportCSV()">Export CSV</button>
-        </div>
-        <div class="status" id="status">
-          <div class="current-plot" id="currentPlotDisplay">Plot: ---</div>
-          <div id="statusText">Press "Start Recording" to begin</div>
-        </div>
-        <div class="spreadsheet">
-          <table id="dataTable"></table>
-        </div>
-        <button class="btn btn-danger" onclick="deleteTrial()">Delete This Trial</button>
-        <button class="btn btn-secondary" onclick="goToPage0()">← Back to List</button>
-      </div>
-    </div>
-  </div>
-  
-  <div class="field-mode" id="fieldMode">
-    <div class="field-mode-info" id="fieldModeInfo">Plot 101</div>
-    <div class="exit-corner" id="exitCorner"></div>
-    <div class="exit-instruction">Double-tap bottom-right to exit</div>
-  </div>
-  
-  <div class="legend" id="legend">
-    <div class="legend-content">
-      <h2>Voice Commands</h2>
-      <div class="legend-item"><div class="legend-command">"Pause"</div><div>Pause listening</div></div>
-      <div class="legend-item"><div class="legend-command">"Resume"</div><div>Resume listening</div></div>
-      <div class="legend-item"><div class="legend-command">"Go to plot [number]"</div><div>Jump to plot</div></div>
-      <div class="legend-item"><div class="legend-command">"Where am I"</div><div>Announce current plot</div></div>
-      <div class="legend-item"><div class="legend-command">"Undo"</div><div>Go back one cell</div></div>
-      <div class="legend-item"><div class="legend-command">"Clear"</div><div>Clear current cell</div></div>
-      <div class="legend-item"><div class="legend-command">"Repeat"</div><div>Repeat last value</div></div>
-      <div class="legend-item"><div class="legend-command">[Number]</div><div>Record and advance</div></div>
-      <button class="btn btn-primary" onclick="hideLegend()">Close</button>
-    </div>
-  </div>
-
-  <script>
-    var currentTrialId = null;
-    var trialData = {};
-    var assessmentColumns = [];
-    var plots = [];
-    var currentRow = 0;
-    var currentCol = 0;
-    var isListening = false;
-    var recognition = null;
-    var lastValue = '';
-    var announceEnabled = false;
-    var audioContext = null;
-    var cellSwitchDelay = 30;
-    var lastTapTime = 0;
-    var saveTimeout = null;
-    
-    loadTrialList();
-    
-    function showAutoSave() {
-      var ind = document.getElementById('autoSaveIndicator');
-      ind.classList.add('show');
-      setTimeout(function() { ind.classList.remove('show'); }, 1500);
-    }
-    
-    function saveCurrentTrial() {
-      if (!currentTrialId) return;
-      var trial = {
-        id: currentTrialId,
-        trialData: trialData,
-        assessmentColumns: assessmentColumns,
-        plots: plots,
-        currentRow: currentRow,
-        currentCol: currentCol,
-        lastModified: new Date().toISOString()
-      };
-      localStorage.setItem('trial_' + currentTrialId, JSON.stringify(trial));
-      showAutoSave();
-    }
-    
-    function debounceSave() {
-      clearTimeout(saveTimeout);
-      saveTimeout = setTimeout(saveCurrentTrial, 500);
-    }
-    
-    function loadTrialList() {
-      var list = document.getElementById('trialList');
-      list.innerHTML = '';
-      var trials = [];
-      for (var i = 0; i < localStorage.length; i++) {
-        var key = localStorage.key(i);
-        if (key.startsWith('trial_')) {
-          try {
-            trials.push(JSON.parse(localStorage.getItem(key)));
-          } catch(e) {}
-        }
-      }
-      trials.sort(function(a, b) { return new Date(b.lastModified) - new Date(a.lastModified); });
-      if (trials.length === 0) {
-        list.innerHTML = '<div class="empty-state">No assessments yet.<br>Click "+ New Assessment" to start.</div>';
-        return;
-      }
-      trials.forEach(function(trial) {
-        var item = document.createElement('div');
-        item.className = 'trial-list-item';
-        item.onclick = function() { loadTrial(trial.id); };
-        var name = document.createElement('div');
-        name.className = 'trial-item-name';
-        name.textContent = trial.trialData.trialName;
-        var details = document.createElement('div');
-        details.className = 'trial-item-details';
-        details.textContent = 'ID: ' + trial.trialData.trialId + ' | Date: ' + trial.trialData.trialDate;
-        item.appendChild(name);
-        item.appendChild(details);
-        list.appendChild(item);
-      });
-    }
-    
-    function loadTrial(id) {
-      var saved = localStorage.getItem('trial_' + id);
-      if (!saved) return;
-      try {
-        var trial = JSON.parse(saved);
-        currentTrialId = id;
-        trialData = trial.trialData;
-        assessmentColumns = trial.assessmentColumns;
-        plots = trial.plots;
-        currentRow = trial.currentRow || 0;
-        currentCol = trial.currentCol || 0;
-        renderTable();
-        document.getElementById('trialTitle').textContent = trialData.trialName;
-        updateCurrentCell();
-        goToPage2();
-      } catch(e) {
-        alert('Error loading trial');
-      }
-    }
-    
-    function deleteTrial() {
-      if (!currentTrialId) return;
-      if (!confirm('Delete this trial? Cannot be undone.')) return;
-      localStorage.removeItem('trial_' + currentTrialId);
-      currentTrialId = null;
-      goToPage0();
-    }
-    
-    function startNewTrial() {
-      currentTrialId = null;
-      document.getElementById('trialId').value = '';
-      document.getElementById('trialName').value = '';
-      document.getElementById('numTreatments').value = '';
-      document.getElementById('numReplicates').value = '';
-      document.getElementById('numSubplots').value = '';
-      document.getElementById('columnsList').innerHTML = '';
-      addColumn();
-      goToPage1();
-    }
-    
-    function initAudio() {
-      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioContext.state === 'suspended') audioContext.resume();
-    }
-    
-    function playBeep() {
-      try {
-        initAudio();
-        var osc = audioContext.createOscillator();
-        var gain = audioContext.createGain();
-        osc.connect(gain);
-        gain.connect(audioContext.destination);
-        osc.frequency.value = 880;
-        gain.gain.setValueAtTime(0.5, audioContext.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
-        osc.start(audioContext.currentTime);
-        osc.stop(audioContext.currentTime + 0.15);
-      } catch (e) {}
-    }
-    
-    function speak(text) {
-      if (!announceEnabled) return;
-      var wasListening = isListening;
-      if (wasListening && recognition) {
-        recognition.stop();
-        isListening = false;
-      }
-      var u = new SpeechSynthesisUtterance(text);
-      u.rate = 2.0;
-      u.volume = 0.8;
-      u.onend = function() {
-        if (wasListening) {
-          setTimeout(function() {
-            try {
-              isListening = true;
-              recognition.start();
-            } catch(e) {}
-          }, Math.max(cellSwitchDelay, 20));
-        }
-      };
-      speechSynthesis.speak(u);
-    }
-    
-    function addColumn() {
-      var div = document.createElement('div');
-      div.className = 'column-item';
-      var inp = document.createElement('input');
-      inp.type = 'text';
-      inp.placeholder = 'Column name';
-      var btn = document.createElement('button');
-      btn.className = 'delete-btn';
-      btn.innerHTML = '×';
-      btn.onclick = function() { div.remove(); };
-      div.appendChild(inp);
-      div.appendChild(btn);
-      document.getElementById('columnsList').appendChild(div);
+      synth.speak(u);
     }
         function createTrial() {
       var trialId = document.getElementById('trialId').value.trim();
@@ -709,51 +397,63 @@
       var numReplicates = parseInt(document.getElementById('numReplicates').value);
       var numSubplots = parseInt(document.getElementById('numSubplots').value) || 0;
       
-      if (!trialId || !trialDate || !trialName || !numTreatments || !numReplicates) {
-        alert('Please fill all required fields');
+      if (!trialId || !trialDate || !trialName) {
+        alert('Please fill in all required fields (Trial ID, Date, Name)');
         return;
       }
       
+      if (!numTreatments || numTreatments < 1 || numTreatments > 1000) {
+        alert('Number of treatments must be between 1 and 1000');
+        return;
+      }
+      
+      if (!numReplicates || numReplicates < 1 || numReplicates > 100) {
+        alert('Number of replicates must be between 1 and 100');
+        return;
+      }
+      
+      var columnInputs = document.querySelectorAll('#columnsList input');
       var cols = [];
-      var inputs = document.querySelectorAll('#columnsList input');
-      inputs.forEach(function(inp) {
-        var val = inp.value.trim();
+      columnInputs.forEach(function(input) {
+        var val = input.value.trim();
         if (val) cols.push(val);
       });
       
       if (cols.length === 0) {
-        alert('Add at least one assessment column');
+        alert('Please add at least one assessment column');
         return;
       }
       
-      currentTrialId = 'trial_' + Date.now();
       trialData = { trialId: trialId, trialDate: trialDate, trialName: trialName, numTreatments: numTreatments, numReplicates: numReplicates, numSubplots: numSubplots };
       assessmentColumns = cols;
       plots = [];
       
-      var plotNum = 101;
       for (var rep = 1; rep <= numReplicates; rep++) {
         for (var trt = 1; trt <= numTreatments; trt++) {
           if (numSubplots > 0) {
             for (var sub = 1; sub <= numSubplots; sub++) {
-              var row = { plot: plotNum, treatment: trt, replicate: rep, subplot: sub, data: {} };
-              assessmentColumns.forEach(function(col) { row.data[col] = ''; });
+              var plotNum = rep * 100 + trt;
+              var subplotId = plotNum + '.' + sub;
+              var row = { plot: plotNum, subplot: sub, subplotId: subplotId, rep: rep, treatment: trt };
+              cols.forEach(function(col) { row[col] = ''; });
               plots.push(row);
             }
           } else {
-            var row = { plot: plotNum, treatment: trt, replicate: rep, data: {} };
-            assessmentColumns.forEach(function(col) { row.data[col] = ''; });
+            var plotNum = rep * 100 + trt;
+            var row = { plot: plotNum, rep: rep, treatment: trt };
+            cols.forEach(function(col) { row[col] = ''; });
             plots.push(row);
           }
-          plotNum++;
         }
       }
       
       currentRow = 0;
       currentCol = 0;
-      renderTable();
-      document.getElementById('trialTitle').textContent = trialName;
+      currentTrialId = 'trial_' + Date.now();
       saveCurrentTrial();
+      renderTable();
+      updateCurrentCell();
+      document.getElementById('trialTitle').textContent = trialName;
       goToPage2();
     }
     
@@ -762,9 +462,10 @@
       table.innerHTML = '';
       var thead = document.createElement('thead');
       var headerRow = document.createElement('tr');
-      var headers = ['Plot', 'Treatment', 'Replicate'];
+      var headers = ['Plot'];
       if (trialData.numSubplots > 0) headers.push('Subplot');
-      headers = headers.concat(assessmentColumns);
+      headers.push('Rep', 'Treatment');
+      assessmentColumns.forEach(function(col) { headers.push(col); });
       headers.forEach(function(h) {
         var th = document.createElement('th');
         th.textContent = h;
@@ -774,26 +475,27 @@
       table.appendChild(thead);
       
       var tbody = document.createElement('tbody');
-      plots.forEach(function(plot, rowIdx) {
+      plots.forEach(function(plot, idx) {
         var tr = document.createElement('tr');
-        var plotCell = document.createElement('td');
-        plotCell.textContent = plot.plot;
-        tr.appendChild(plotCell);
-        var trtCell = document.createElement('td');
-        trtCell.textContent = plot.treatment;
-        tr.appendChild(trtCell);
-        var repCell = document.createElement('td');
-        repCell.textContent = plot.replicate;
-        tr.appendChild(repCell);
+        tr.dataset.row = idx;
+        var td1 = document.createElement('td');
+        td1.textContent = plot.plot;
+        tr.appendChild(td1);
         if (trialData.numSubplots > 0) {
-          var subCell = document.createElement('td');
-          subCell.textContent = plot.subplot;
-          tr.appendChild(subCell);
+          var tdSub = document.createElement('td');
+          tdSub.textContent = plot.subplot;
+          tr.appendChild(tdSub);
         }
+        var td2 = document.createElement('td');
+        td2.textContent = plot.rep;
+        tr.appendChild(td2);
+        var td3 = document.createElement('td');
+        td3.textContent = plot.treatment;
+        tr.appendChild(td3);
         assessmentColumns.forEach(function(col, colIdx) {
           var td = document.createElement('td');
-          if (rowIdx === currentRow && colIdx === currentCol) td.className = 'current-cell';
-          td.textContent = plot.data[col] || '';
+          td.textContent = plot[col] || '';
+          td.dataset.col = colIdx;
           tr.appendChild(td);
         });
         tbody.appendChild(tr);
@@ -802,252 +504,273 @@
     }
     
     function updateCurrentCell() {
+      var cells = document.querySelectorAll('td.current-cell');
+      cells.forEach(function(c) { c.classList.remove('current-cell'); });
+      
       if (currentRow >= plots.length) {
-        currentRow = plots.length - 1;
-        currentCol = assessmentColumns.length - 1;
+        updateStatus('Assessment Complete!', false);
+        if (isListening && recognition) {
+          recognition.stop();
+          isListening = false;
+          document.getElementById('toggleListeningBtn').textContent = 'Start Recording';
+        }
+        return;
       }
-      if (currentRow < 0) currentRow = 0;
-      if (currentCol < 0) currentCol = 0;
-      if (currentCol >= assessmentColumns.length) currentCol = assessmentColumns.length - 1;
       
-      renderTable();
-      document.getElementById('currentPlotDisplay').textContent = 'Plot: ' + plots[currentRow].plot + ' | ' + assessmentColumns[currentCol];
-      document.getElementById('fieldModeInfo').textContent = 'Plot ' + plots[currentRow].plot;
+      var offset = trialData.numSubplots > 0 ? 4 : 3;
+      var row = document.querySelector('tr[data-row="' + currentRow + '"]');
+      if (row) {
+        var cell = row.querySelector('td[data-col="' + currentCol + '"]');
+        if (cell) {
+          cell.classList.add('current-cell');
+          cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
       
-      var table = document.getElementById('dataTable');
-      var cell = table.rows[currentRow + 1].cells[3 + (trialData.numSubplots > 0 ? 1 : 0) + currentCol];
-      if (cell) cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      var plotDisplay = trialData.numSubplots > 0 ? plots[currentRow].subplotId : plots[currentRow].plot;
+      document.getElementById('currentPlotDisplay').textContent = 'Plot ' + plotDisplay + ' - ' + assessmentColumns[currentCol];
+      document.getElementById('fieldModeInfo').textContent = 'Plot ' + plotDisplay;
     }
     
-    function advanceCell() {
-      playBeep();
-      setTimeout(function() {
-        currentCol++;
-        if (currentCol >= assessmentColumns.length) {
-          currentCol = 0;
-          currentRow++;
-          if (currentRow >= plots.length) {
-            currentRow = plots.length - 1;
-            currentCol = assessmentColumns.length - 1;
-            speak('End of trial');
-            return;
-          }
-          if (announceEnabled) speak('Plot ' + plots[currentRow].plot);
-        }
-        updateCurrentCell();
-        debounceSave();
-      }, cellSwitchDelay);
-    }
-    
-    function handleVoiceCommand(text) {
-      if (!text) return;
-      
-      document.getElementById('statusText').textContent = 'Heard: "' + text + '"';
-      
-      if (text.includes('pause') || text.includes('stop')) { pauseListening(); return; }
-      if (text.includes('resume') || text.includes('continue')) { resumeListening(); return; }
-      if (text.includes('where')) { speak('Plot ' + plots[currentRow].plot); return; }
-      var m = text.match(/plot (\d+)/);
-      if (m) {
-        var idx = plots.findIndex(function(p) { return p.plot === parseInt(m[1]); });
-        if (idx !== -1) {
-          currentRow = idx;
-          currentCol = 0;
-          updateCurrentCell();
-          speak(m[1]);
-        }
-        return;
-      }
-      if (text.includes('undo')) {
-        currentCol--;
-        if (currentCol < 0) {
-          currentRow--;
-          if (currentRow < 0) { currentRow = 0; currentCol = 0; }
-          else { currentCol = assessmentColumns.length - 1; }
-        }
-        plots[currentRow].data[assessmentColumns[currentCol]] = '';
-        renderTable();
-        updateCurrentCell();
-        debounceSave();
-        return;
-      }
-      if (text.includes('clear')) {
-        plots[currentRow].data[assessmentColumns[currentCol]] = '';
-        renderTable();
-        updateCurrentCell();
-        debounceSave();
-        return;
-      }
-      if (text.includes('repeat')) {
-        if (lastValue) speak(lastValue);
-        return;
-      }
-      
-      var numberWords = {
-        'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
-        'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9',
-        'ten': '10', 'eleven': '11', 'twelve': '12', 'thirteen': '13',
-        'fourteen': '14', 'fifteen': '15', 'sixteen': '16', 'seventeen': '17',
-        'eighteen': '18', 'nineteen': '19', 'twenty': '20', 'thirty': '30',
-        'forty': '40', 'fifty': '50', 'sixty': '60', 'seventy': '70',
-        'eighty': '80', 'ninety': '90', 'hundred': '100'
-      };
-      
-      var processedText = text;
-      for (var word in numberWords) {
-        processedText = processedText.replace(new RegExp(word, 'g'), numberWords[word]);
-      }
-      
-      var num = processedText.match(/(\d+\.?\d*)/);
-      
-      if (num) {
-        var value = num[1];
-        plots[currentRow].data[assessmentColumns[currentCol]] = value;
-        lastValue = value;
-        renderTable();
-        advanceCell();
+    function updateStatus(text, listening) {
+      var status = document.getElementById('status');
+      var statusText = document.getElementById('statusText');
+      statusText.textContent = text;
+      if (listening) {
+        status.classList.add('listening');
       } else {
-        document.getElementById('statusText').textContent = 'Not recognized: "' + text + '"';
+        status.classList.remove('listening');
       }
     }
     
     function toggleListening() {
+      if (!recognition) setupRecognition();
       if (isListening) {
-        stopListening();
+        recognition.stop();
+        isListening = false;
+        document.getElementById('toggleListeningBtn').textContent = 'Start Recording';
+        updateStatus('Paused', false);
       } else {
-        startListening();
+        try {
+          recognition.start();
+          isListening = true;
+          initAudio();
+          document.getElementById('toggleListeningBtn').textContent = 'Pause Recording';
+          updateStatus('Listening...', true);
+        } catch(e) {
+          console.error('Recognition start error:', e);
+        }
       }
     }
     
-    function startListening() {
-      initAudio();
-      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        alert('Speech recognition not supported');
+    function setupRecognition() {
+      var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert('Speech recognition not supported in this browser');
         return;
       }
-      var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = false;
       recognition.lang = 'en-US';
       
       recognition.onresult = function(event) {
-        var last = event.results.length - 1;
-        var text = event.results[last][0].transcript.toLowerCase().trim();
-        handleVoiceCommand(text);
+        var transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+        processVoiceCommand(transcript);
       };
       
       recognition.onerror = function(event) {
-        if (event.error === 'no-speech' || event.error === 'audio-capture') return;
-        document.getElementById('statusText').textContent = 'Error: ' + event.error;
+        console.error('Recognition error:', event.error);
+        if (event.error === 'no-speech') return;
+        updateStatus('Error: ' + event.error, false);
       };
       
       recognition.onend = function() {
         if (isListening) {
-          try { recognition.start(); } catch(e) {}
+          try {
+            recognition.start();
+          } catch(e) {
+            console.error('Restart error:', e);
+          }
         }
       };
+    }
+    
+    function processVoiceCommand(transcript) {
+      var numberWords = {
+        'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
+        'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9',
+        'ten': '10', 'eleven': '11', 'twelve': '12', 'thirteen': '13', 'fourteen': '14',
+        'fifteen': '15', 'sixteen': '16', 'seventeen': '17', 'eighteen': '18', 'nineteen': '19',
+        'twenty': '20', 'thirty': '30', 'forty': '40', 'fifty': '50',
+        'sixty': '60', 'seventy': '70', 'eighty': '80', 'ninety': '90'
+      };
       
-      try {
-        recognition.start();
-        isListening = true;
-        document.getElementById('status').classList.add('listening');
-        document.getElementById('statusText').textContent = 'Listening...';
-        document.querySelector('.controls button').textContent = 'Stop Recording';
-        document.querySelector('.controls button').className = 'btn btn-danger';
-      } catch(e) {
-        alert('Could not start: ' + e.message);
+      var processedText = ' ' + transcript + ' ';
+      
+      // Handle compound numbers like "twenty one" -> "21"
+      var compoundPattern = /(twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)[\s-]+(one|two|three|four|five|six|seven|eight|nine)/g;
+      processedText = processedText.replace(compoundPattern, function(match, tens, ones) {
+        return String(parseInt(numberWords[tens]) + parseInt(numberWords[ones]));
+      });
+      
+      // Replace remaining number words with word boundaries
+      for (var word in numberWords) {
+        var regex = new RegExp('\\b' + word + '\\b', 'g');
+        processedText = processedText.replace(regex, numberWords[word]);
+      }
+      
+      processedText = processedText.trim();
+      
+      if (processedText.match(/^plot\s+(\d+)/)) {
+        var plotNum = parseInt(processedText.match(/^plot\s+(\d+)/)[1]);
+        jumpToPlot(plotNum);
+      } else if (processedText === 'where' || processedText === 'where am i') {
+        announceCurrentPlot();
+      } else if (processedText === 'undo' || processedText === 'go back') {
+        undoLastEntry();
+      } else if (processedText === 'clear' || processedText === 'delete') {
+        clearCurrentCell();
+      } else if (processedText === 'repeat' || processedText === 'same') {
+        repeatLastValue();
+      } else if (processedText === 'pause' || processedText === 'stop') {
+        toggleListening();
+      } else if (processedText === 'resume' || processedText === 'continue') {
+        if (!isListening) toggleListening();
+      } else if (processedText.match(/^\d+(\.\d+)?$/)) {
+        recordValue(processedText);
       }
     }
     
-    function stopListening() {
-      if (recognition) recognition.stop();
-      isListening = false;
-      document.getElementById('status').classList.remove('listening');
-      document.getElementById('statusText').textContent = 'Stopped';
-      document.querySelector('.controls button').textContent = 'Start Recording';
-      document.querySelector('.controls button').className = 'btn btn-success';
+    function recordValue(value) {
+      if (currentRow >= plots.length) return;
+      plots[currentRow][assessmentColumns[currentCol]] = value;
+      lastValue = value;
+      playBeep();
+      debounceSave();
+      renderTable();
+      advanceCell();
     }
     
-    function pauseListening() {
-      if (recognition) recognition.stop();
-      isListening = false;
-      document.getElementById('status').classList.remove('listening');
-      document.getElementById('statusText').textContent = 'Paused (say "resume")';
+    function advanceCell() {
+      setTimeout(function() {
+        currentCol++;
+        if (currentCol >= assessmentColumns.length) {
+          currentCol = 0;
+          currentRow++;
+        }
+        updateCurrentCell();
+        var plotDisplay = currentRow < plots.length ? (trialData.numSubplots > 0 ? plots[currentRow].subplotId : plots[currentRow].plot) : 'Done';
+        if (currentRow < plots.length) {
+          speak('Plot ' + plotDisplay);
+        }
+      }, cellSwitchDelay);
     }
     
-    function resumeListening() {
-      if (recognition) {
-        try {
-          recognition.start();
-          isListening = true;
-          document.getElementById('status').classList.add('listening');
-          document.getElementById('statusText').textContent = 'Listening...';
-        } catch(e) {}
+    function jumpToPlot(plotNum) {
+      var idx = plots.findIndex(function(p) { return p.plot === plotNum; });
+      if (idx !== -1) {
+        currentRow = idx;
+        currentCol = 0;
+        updateCurrentCell();
+        speak('Plot ' + plotNum);
       }
+    }
+    
+    function announceCurrentPlot() {
+      if (currentRow >= plots.length) {
+        speak('Assessment complete');
+        return;
+      }
+      var plotDisplay = trialData.numSubplots > 0 ? plots[currentRow].subplotId : plots[currentRow].plot;
+      speak('Plot ' + plotDisplay + ', ' + assessmentColumns[currentCol]);
+    }
+    
+    function undoLastEntry() {
+      if (currentCol === 0 && currentRow === 0) return;
+      currentCol--;
+      if (currentCol < 0) {
+        currentCol = assessmentColumns.length - 1;
+        currentRow--;
+      }
+      if (currentRow < 0) {
+        currentRow = 0;
+        currentCol = 0;
+        return;
+      }
+      plots[currentRow][assessmentColumns[currentCol]] = '';
+      playBeep();
+      debounceSave();
+      renderTable();
+      updateCurrentCell();
+    }
+    
+    function clearCurrentCell() {
+      if (currentRow >= plots.length) return;
+      plots[currentRow][assessmentColumns[currentCol]] = '';
+      playBeep();
+      debounceSave();
+      renderTable();
+      updateCurrentCell();
+    }
+    
+    function repeatLastValue() {
+      if (lastValue && currentRow < plots.length) {
+        recordValue(lastValue);
+      }
+    }
+    
+    function updateSpeed(value) {
+      cellSwitchDelay = parseInt(value);
+      document.getElementById('speedValue').textContent = value + 'ms';
     }
     
     function toggleFieldMode() {
-      var fm = document.getElementById('fieldMode');
-      fm.classList.toggle('active');
-      if (fm.classList.contains('active')) {
-        document.getElementById('fieldModeInfo').textContent = 'Plot ' + plots[currentRow].plot;
-        if (!isListening) startListening();
+      var fieldMode = document.getElementById('fieldMode');
+      fieldMode.classList.toggle('active');
+    }
+    
+    function handleExitCorner() {
+      var now = Date.now();
+      if (now - lastTapTime < 500) {
+        toggleFieldMode();
+        lastTapTime = 0;
+      } else {
+        lastTapTime = now;
       }
     }
     
-    document.getElementById('exitCorner').addEventListener('click', function(e) {
-      var now = Date.now();
-      if (now - lastTapTime < 300) {
-        document.getElementById('fieldMode').classList.remove('active');
-      }
-      lastTapTime = now;
-    });
+    function showLegend() {
+      document.getElementById('legend').classList.add('active');
+    }
     
-    function showLegend() { document.getElementById('legend').classList.add('active'); }
-    function hideLegend() { document.getElementById('legend').classList.remove('active'); }
-    
-    function updateSpeed(val) {
-      cellSwitchDelay = parseInt(val);
-      document.getElementById('speedValue').textContent = val + 'ms';
+    function hideLegend() {
+      document.getElementById('legend').classList.remove('active');
     }
     
     function exportCSV() {
-      var csv = 'Plot,Treatment,Replicate';
-      if (trialData.numSubplots > 0) csv += ',Subplot';
-      csv += ',' + assessmentColumns.join(',') + '\n';
+      if (plots.length === 0) return;
+      var headers = ['Plot'];
+      if (trialData.numSubplots > 0) headers.push('Subplot');
+      headers.push('Rep', 'Treatment');
+      assessmentColumns.forEach(function(col) { headers.push(col); });
+      
+      var csv = headers.join(',') + '\n';
       plots.forEach(function(plot) {
-        var row = [plot.plot, plot.treatment, plot.replicate];
+        var row = [plot.plot];
         if (trialData.numSubplots > 0) row.push(plot.subplot);
-        assessmentColumns.forEach(function(col) { row.push(plot.data[col] || ''); });
+        row.push(plot.rep, plot.treatment);
+        assessmentColumns.forEach(function(col) { row.push(plot[col] || ''); });
         csv += row.join(',') + '\n';
       });
+      
       var blob = new Blob([csv], { type: 'text/csv' });
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
       a.href = url;
-      a.download = trialData.trialName.replace(/[^a-z0-9]/gi, '_') + '_' + trialData.trialDate + '.csv';
+      a.download = trialData.trialId + '_' + trialData.trialDate + '.csv';
       a.click();
     }
     
     function goToPage0() {
-      loadTrialList();
-      document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
-      document.getElementById('page0').classList.add('active');
-      if (isListening) stopListening();
-    }
-    
-    function goToPage1() {
-      document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
-      document.getElementById('page1').classList.add('active');
-      document.getElementById('trialDate').valueAsDate = new Date();
-    }
-    
-    function goToPage2() {
-      document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
-      document.getElementById('page2').classList.add('active');
-      document.getElementById('announceToggle').checked = announceEnabled;
-    }
-  </script>
-</body>
-</html>
+      document.querySelectorAll('.page').forEach(function(p) { p.classList.remove
