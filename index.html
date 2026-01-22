@@ -771,6 +771,25 @@
       a.download = trialData.trialId + '_' + trialData.trialDate + '.csv';
       a.click();
     }
+        function goToPage0() {
+      document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+      document.getElementById('page0').classList.add('active');
+      loadTrialList();
+      if (isListening && recognition) {
+        recognition.stop();
+        isListening = false;
+      }
+    }
     
-    function goToPage0() {
-      document.querySelectorAll('.page').forEach(function(p) { p.classList.remove
+    function goToPage1() {
+      document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+      document.getElementById('page1').classList.add('active');
+    }
+    
+    function goToPage2() {
+      document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+      document.getElementById('page2').classList.add('active');
+    }
+  </script>
+</body>
+</html>
