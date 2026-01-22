@@ -15,7 +15,7 @@
     }
     .container { max-width: 600px; margin: 0 auto; background: white; min-height: 100vh; }
     .header { background: #007AFF; color: white; padding: 20px; text-align: center; }
-    .page { display: none; padding: 20px; }
+    .page { display: none; padding: 20px; position: relative; }
     .page.active { display: block; }
     .form-group { margin-bottom: 20px; }
     label { display: block; margin-bottom: 5px; font-weight: 600; color: #333; }
@@ -52,6 +52,15 @@
       padding: 8px 12px;
       border-radius: 5px;
       cursor: pointer;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    .watermark {
+      text-align: center;
+      padding: 20px;
+      font-size: 12px;
+      color: #999;
+      margin-top: 30px;
     }
     .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
     .controls button { flex: 1; min-width: 120px; padding: 12px; }
@@ -174,9 +183,11 @@
         <div class="assessment-columns">
           <label>Assessment Columns</label>
           <div id="columnsList"></div>
-          <button class="btn btn-secondary" onclick="addColumn()">+ Add Assessment Column</button>
+          <button class="btn btn-secondary" id="addColumnBtn">+ Add Assessment Column</button>
         </div>
-        <button class="btn btn-primary" onclick="createTrial()">Create Trial</button>
+        <button class="btn btn-primary" id="createTrialBtn">Create Trial</button>
+        
+        <div class="watermark">By Mr Sa</div>
       </div>
     </div>
     
@@ -184,19 +195,19 @@
     <div id="page2" class="page">
       <div class="header"><h1 id="trialTitle">Data Collection</h1></div>
       <div style="padding: 20px;">
-        <button class="btn btn-secondary" onclick="goToPage1()">← Back to Setup</button>
+        <button class="btn btn-secondary" id="backBtn1">← Back to Setup</button>
         
         <div class="toggle-group" style="margin-top: 20px;">
           <span>Announce Plot Changes</span>
           <label class="switch">
-            <input type="checkbox" id="announceToggle" checked onchange="announceEnabled = this.checked">
+            <input type="checkbox" id="announceToggle" checked>
             <span class="slider"></span>
           </label>
         </div>
         
         <div class="form-group">
           <label>Cell Switching Speed</label>
-          <input type="range" id="speedSlider" min="0" max="1000" value="50" step="25" oninput="updateSpeed(this.value)">
+          <input type="range" id="speedSlider" min="0" max="1000" value="50" step="25">
           <div style="display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-top: 5px;">
             <span>Instant</span>
             <span id="speedValue">50ms</span>
@@ -205,10 +216,10 @@
         </div>
         
         <div class="controls">
-          <button class="btn btn-success" onclick="toggleListening()">Start Recording</button>
-          <button class="btn btn-secondary" onclick="toggleFieldMode()">Field Mode</button>
-          <button class="btn btn-secondary" onclick="showLegend()">Commands</button>
-          <button class="btn btn-primary" onclick="exportCSV()">Export CSV</button>
+          <button class="btn btn-success" id="toggleListenBtn">Start Recording</button>
+          <button class="btn btn-secondary" id="fieldModeBtn">Field Mode</button>
+          <button class="btn btn-secondary" id="commandsBtn">Commands</button>
+          <button class="btn btn-primary" id="exportBtn">Export CSV</button>
         </div>
         
         <div class="status" id="status">
@@ -220,7 +231,7 @@
           <table id="dataTable"></table>
         </div>
         
-        <button class="btn btn-secondary" onclick="goToPage1()">← Back to Setup</button>
+        <button class="btn btn-secondary" id="backBtn2">← Back to Setup</button>
       </div>
     </div>
   </div>
@@ -245,7 +256,7 @@
       <div class="legend-item"><div class="legend-command">"Clear"</div><div>Clear current cell</div></div>
       <div class="legend-item"><div class="legend-command">"Repeat"</div><div>Repeat last value</div></div>
       <div class="legend-item"><div class="legend-command">[Number]</div><div>Record and advance</div></div>
-      <button class="btn btn-primary" onclick="hideLegend()">Close</button>
+      <button class="btn btn-primary" id="closeLegendBtn">Close</button>
     </div>
   </div>
 
@@ -264,8 +275,26 @@
     var cellSwitchDelay = 50;
     var lastTapTime = 0;
     
+    // Initialize
     document.getElementById('trialDate').valueAsDate = new Date();
     addColumn();
+    
+    // Event Listeners
+    document.getElementById('addColumnBtn').addEventListener('click', addColumn);
+    document.getElementById('createTrialBtn').addEventListener('click', createTrial);
+    document.getElementById('backBtn1').addEventListener('click', goToPage1);
+    document.getElementById('backBtn2').addEventListener('click', goToPage1);
+    document.getElementById('toggleListenBtn').addEventListener('click', toggleListening);
+    document.getElementById('fieldModeBtn').addEventListener('click', toggleFieldMode);
+    document.getElementById('commandsBtn').addEventListener('click', showLegend);
+    document.getElementById('exportBtn').addEventListener('click', exportCSV);
+    document.getElementById('closeLegendBtn').addEventListener('click', hideLegend);
+    document.getElementById('announceToggle').addEventListener('change', function() {
+      announceEnabled = this.checked;
+    });
+    document.getElementById('speedSlider').addEventListener('input', function() {
+      updateSpeed(this.value);
+    });
     
     function initAudio() {
       if (!audioContext) {
@@ -298,11 +327,11 @@
         isListening = false;
       }
       var u = new SpeechSynthesisUtterance(text);
-      u.rate = 1.8; // Faster speech
+      u.rate = 1.8;
       u.volume = 0.8;
       u.onend = function() {
+        if (      u.onend = function() {
         if (wasListening) {
-          // Shorter delay before restarting
           setTimeout(function() {
             try {
               isListening = true;
@@ -311,7 +340,7 @@
             } catch(e) {
               console.log('Speech restart error:', e);
             }
-          }, Math.max(cellSwitchDelay, 30)); // Minimum 30ms
+          }, Math.max(cellSwitchDelay, 30));
         }
       };
       speechSynthesis.speak(u);
@@ -483,7 +512,7 @@
       var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognition = new SR();
       recognition.continuous = true;
-      recognition.interimResults = true; // Changed to true for faster response
+      recognition.interimResults = true;
       recognition.lang = 'en-US';
       recognition.maxAlternatives = 1;
       
@@ -502,7 +531,6 @@
             interimTranscript += transcript;
           }
         }
-        // Show interim results to user
         if (interimTranscript) {
           document.getElementById('statusText').textContent = 'Hearing: ' + interimTranscript + '...';
         }
@@ -515,7 +543,6 @@
           isListening = false;
           document.getElementById('status').classList.remove('listening');
         } else if (e.error === 'no-speech') {
-          // Ignore no-speech errors
           return;
         } else if (e.error === 'network') {
           document.getElementById('statusText').textContent = 'Network error - check connection';
@@ -524,7 +551,6 @@
       
       recognition.onend = function() {
         if (isListening) {
-          // Restart immediately without delay
           try { 
             recognition.start(); 
           } catch(e) {
@@ -583,7 +609,6 @@
         return;
       }
       
-      // Enhanced number detection
       var num = text.match(/(\d+\.?\d*)/);
       if (num) {
         var value = num[1];
@@ -594,7 +619,6 @@
         document.getElementById('statusText').textContent = 'Recorded: ' + value;
         advanceCell();
       } else {
-        // Try word-to-number conversion
         var wordNums = {
           'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
           'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9',
@@ -630,13 +654,11 @@
         recognition.start();
         document.getElementById('status').classList.add('listening');
         document.getElementById('statusText').textContent = 'Listening...';
-        // Announce first plot
         if (plots[currentRow]) {
           speak(plots[currentRow].plot.toString());
         }
       } catch(e) {
         console.log('Start error:', e);
-        // If already started, just continue
         if (e.name === 'InvalidStateError') {
           isListening = true;
           document.getElementById('status').classList.add('listening');
@@ -665,7 +687,6 @@
       document.getElementById('fieldMode').classList.toggle('active');
     }
     
-    // Setup field mode exit on load
     window.addEventListener('load', function() {
       var exitCorner = document.getElementById('exitCorner');
       
@@ -677,11 +698,9 @@
         var tapLength = currentTime - lastTapTime;
         
         if (tapLength < 300 && tapLength > 0) {
-          // Double tap detected
           toggleFieldMode();
           lastTapTime = 0;
         } else {
-          // First tap
           lastTapTime = currentTime;
         }
       }, { passive: false });
@@ -712,27 +731,4 @@
       csv += 'Date:,' + trialData.trialDate + '\n';
       csv += 'Treatments:,' + trialData.numTreatments + '\n';
       csv += 'Replicates:,' + trialData.numReplicates + '\n';
-      if (trialData.numSubplots > 0) csv += 'Subplots:,' + trialData.numSubplots + '\n';
-      csv += '\n';
-      var h = ['Plot'];
-      if (trialData.numSubplots > 0) h.push('Subplot');
-      csv += h.concat(assessmentColumns).join(',') + '\n';
-      for (var i = 0; i < plots.length; i++) {
-        var row = [plots[i].plot];
-        if (trialData.numSubplots > 0) row.push(plots[i].subplot);
-        for (var j = 0; j < assessmentColumns.length; j++) {
-          row.push(plots[i].data[assessmentColumns[j]] || '');
-        }
-        csv += row.join(',') + '\n';
-      }
-      var blob = new Blob([csv], { type: 'text/csv' });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = trialData.trialName + '_' + trialData.trialDate + '.csv';
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-  </script>
-</body>
-</html>
+      if (trialData.numSubplots > 0) csv += '
