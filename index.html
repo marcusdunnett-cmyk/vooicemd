@@ -411,9 +411,8 @@
     let isPaused = false;
     let recognition = null;
     let currentCell = null;
-    let recordingMode = 'oneAtATime'; // 'oneAtATime' or 'batch'
+    let recordingMode = 'oneAtATime';
 
-    // Word to number conversion map
     const wordToNumber = {
       'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
       'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9',
@@ -424,21 +423,17 @@
       'eighty': '80', 'ninety': '90', 'hundred': '100'
     };
 
-    // Convert spoken words to numbers
     function convertWordToNumber(text) {
       const lowerText = text.toLowerCase().trim();
       
-      // Check if it's already a number
       if (!isNaN(lowerText)) {
         return lowerText;
       }
       
-      // Check direct word match
       if (wordToNumber[lowerText]) {
         return wordToNumber[lowerText];
       }
       
-      // Handle compound numbers like "twenty five" -> "25"
       const words = lowerText.split(/[\s-]+/);
       if (words.length === 2) {
         const tens = wordToNumber[words[0]];
@@ -448,10 +443,9 @@
         }
       }
       
-      return text; // Return original if no conversion found
+      return text;
     }
 
-    // Initialize on page load
     window.onload = function() {
       loadTrials();
       setupVoiceRecognition();
@@ -471,19 +465,41 @@
           
           document.getElementById('voiceStatus').innerHTML = `Heard: "${text}"`;
           
-          // Convert word to number
-          const convertedValue = convertWordToNumber(text);
+          if (!currentCell || isPaused) return;
           
-          if (currentCell && !isPaused) {
-            currentCell.textContent = convertedValue;
+          // Split by commas for batch entry
+          const values = text.split(',').map(v => v.trim()).filter(v => v);
+          
+          if (recordingMode === 'batch') {
+            // In batch mode, split values go to consecutive cells
+            let cell = currentCell;
+            values.forEach((value, index) => {
+              if (cell) {
+                const convertedValue = convertWordToNumber(value);
+                cell.textContent = convertedValue;
+                
+                // Move to next cell for subsequent values
+                if (index < values.length - 1) {
+                  const allCells = Array.from(document.querySelectorAll('td[contenteditable="true"]'));
+                  const currentIndex = allCells.indexOf(cell);
+                  if (currentIndex < allCells.length - 1) {
+                    cell = allCells[currentIndex + 1];
+                  }
+                }
+              }
+            });
+            
+            // Update currentCell to last filled cell
+            currentCell = cell;
+            highlightCell(currentCell);
             saveCurrentTrial();
             
-            if (recordingMode === 'oneAtATime') {
-              moveToNextCell();
-            } else {
-              // In batch mode, stay in same cell until manually moved
-              highlightCell(currentCell);
-            }
+          } else {
+            // One-at-a-time mode: only use first value, ignore rest
+            const convertedValue = convertWordToNumber(values[0]);
+            currentCell.textContent = convertedValue;
+            saveCurrentTrial();
+            moveToNextCell();
           }
         };
 
@@ -505,7 +521,6 @@
     function setRecordingMode(mode) {
       recordingMode = mode;
       
-      // Update button styles
       const oneBtn = document.getElementById('oneAtATimeBtn');
       const batchBtn = document.getElementById('batchBtn');
       
@@ -527,7 +542,6 @@
       isRecording = true;
       isPaused = false;
       
-      // If no cell is selected, start from first assessment cell
       if (!currentCell) {
         const firstCell = document.querySelector('td[contenteditable="true"]');
         if (firstCell) {
@@ -535,7 +549,6 @@
           highlightCell(currentCell);
         }
       } else {
-        // Resume from currently selected cell
         highlightCell(currentCell);
       }
 
@@ -573,9 +586,7 @@
     }
 
     function highlightCell(cell) {
-      // Remove highlight from all cells
       document.querySelectorAll('td').forEach(td => td.classList.remove('cell-highlight'));
-      // Highlight current cell
       if (cell) {
         cell.classList.add('cell-highlight');
       }
@@ -591,13 +602,11 @@
         currentCell = allCells[currentIndex + 1];
         highlightCell(currentCell);
       } else {
-        // Reached end
         stopVoiceRecording();
         alert('Reached end of data entry');
       }
     }
 
-    // Allow manual cell selection during recording
     document.addEventListener('click', function(e) {
       if (e.target.tagName === 'TD' && e.target.hasAttribute('contenteditable')) {
         if (isRecording || isPaused) {
@@ -662,7 +671,6 @@
         data: []
       };
 
-      // Initialize data structure
       for (let t = 1; t <= treatments; t++) {
         for (let r = 1; r <= reps; r++) {
           for (let s = 1; s <= subplots; s++) {
@@ -681,7 +689,8 @@
       
       loadTrial(trials.length - 1);
     }
-        function loadTrial(index) {
+
+    function loadTrial(index) {
       currentTrial = index;
       const trial = trials[index];
 
@@ -723,7 +732,6 @@
       const trial = trials[currentTrial];
       trial.assessments.push(name);
       
-      // Initialize values for this assessment
       trial.data.forEach(row => {
         row.values[name] = '';
       });
@@ -743,7 +751,16 @@
       
       trial.assessments.splice(index, 1);
       
-      // Remove values for this assessment
+      trial.data.forEach(row => {
+        delete row.values[assess
+              function removeAssessment(index) {
+      if (!confirm('Remove this assessment column?')) return;
+
+      const trial = trials[currentTrial];
+      const assessmentName = trial.assessments[index];
+      
+      trial.assessments.splice(index, 1);
+      
       trial.data.forEach(row => {
         delete row.values[assessmentName];
       });
@@ -758,7 +775,6 @@
       const header = document.getElementById('tableHeader');
       const body = document.getElementById('tableBody');
 
-      // Build header
       let headerHTML = '<tr><th>Treatment</th><th>Rep</th><th>Subplot</th>';
       trial.assessments.forEach(assessment => {
         headerHTML += `<th>${assessment}</th>`;
@@ -766,7 +782,6 @@
       headerHTML += '</tr>';
       header.innerHTML = headerHTML;
 
-      // Build body
       body.innerHTML = '';
       trial.data.forEach((row, rowIndex) => {
         const tr = document.createElement('tr');
@@ -799,10 +814,8 @@
     function exportToCSV() {
       const trial = trials[currentTrial];
       
-      // Build CSV header
       let csv = 'Treatment,Rep,Subplot,' + trial.assessments.join(',') + '\n';
       
-      // Build CSV rows
       trial.data.forEach(row => {
         let rowData = [row.treatment, row.rep, row.subplot];
         trial.assessments.forEach(assessment => {
@@ -811,7 +824,6 @@
         csv += rowData.join(',') + '\n';
       });
 
-      // Download
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
