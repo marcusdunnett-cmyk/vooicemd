@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Syngenta Trial Data Entry</title>
-    <style>
+  <style>
     * {
       margin: 0;
       padding: 0;
@@ -15,11 +15,11 @@
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
-      padding: 20px;
+      padding: 10px;
     }
 
     .container {
-      max-width: 1400px;
+      max-width: 100%;
       margin: 0 auto;
       background: white;
       border-radius: 15px;
@@ -30,34 +30,38 @@
     .header {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      padding: 30px;
+      padding: 20px 15px;
       text-align: center;
     }
 
     .header h1 {
-      font-size: 2.5em;
-      margin-bottom: 10px;
+      font-size: 1.5em;
+      margin-bottom: 5px;
+    }
+
+    .header p {
+      font-size: 0.9em;
     }
 
     .content {
-      padding: 40px;
+      padding: 15px;
     }
 
     .form-group {
-      margin-bottom: 25px;
+      margin-bottom: 15px;
     }
 
     .form-group label {
       display: block;
       font-weight: 600;
-      margin-bottom: 8px;
+      margin-bottom: 5px;
       color: #333;
-      font-size: 16px;
+      font-size: 14px;
     }
 
     .form-group input {
       width: 100%;
-      padding: 12px;
+      padding: 10px;
       border: 2px solid #ddd;
       border-radius: 8px;
       font-size: 16px;
@@ -70,13 +74,15 @@
     }
 
     .btn {
-      padding: 12px 30px;
+      padding: 12px 24px;
       border: none;
       border-radius: 8px;
-      font-size: 16px;
+      font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s;
+      margin: 5px 5px 5px 0;
+      width: 100%;
     }
 
     .btn-primary {
@@ -84,69 +90,55 @@
       color: white;
     }
 
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
-    }
-
     .btn-secondary {
       background: #6c757d;
       color: white;
-      margin-left: 10px;
-    }
-
-    .btn-secondary:hover {
-      background: #5a6268;
     }
 
     .btn-success {
       background: #28a745;
       color: white;
-      margin-left: 10px;
-    }
-
-    .btn-success:hover {
-      background: #218838;
     }
 
     .btn-danger {
       background: #dc3545;
       color: white;
-      margin-left: 10px;
-    }
-
-    .btn-danger:hover {
-      background: #c82333;
     }
 
     .table-container {
       overflow-x: auto;
-      margin-top: 30px;
+      margin-top: 15px;
       border: 2px solid #ddd;
       border-radius: 8px;
+      max-height: 400px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
       background: white;
+      font-size: 14px;
     }
 
     th {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      padding: 15px;
+      padding: 10px 8px;
       text-align: left;
       font-weight: 600;
       position: sticky;
       top: 0;
       z-index: 10;
+      font-size: 13px;
     }
 
     td {
-      padding: 12px 15px;
+      padding: 10px 8px;
       border: 1px solid #ddd;
-      min-width: 100px;
+      min-width: 70px;
+      font-size: 14px;
     }
 
     td[contenteditable="true"] {
@@ -154,54 +146,46 @@
       background: #f8f9fa;
     }
 
-    td[contenteditable="true"]:hover {
-      background: #e9ecef;
-    }
-
-    td[contenteditable="true"]:focus {
-      outline: 2px solid #667eea;
-      background: #fff;
-    }
-
     .cell-highlight {
       background: #fff3cd !important;
       outline: 3px solid #ffc107 !important;
+      animation: pulse 1s infinite;
     }
 
-    .controls {
-      margin-top: 20px;
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
+      50% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
     }
 
     .assessment-manager {
-      margin-top: 30px;
-      padding: 20px;
+      margin-top: 15px;
+      padding: 15px;
       background: #f8f9fa;
       border-radius: 8px;
     }
 
     .assessment-manager h3 {
-      margin-bottom: 15px;
+      margin-bottom: 10px;
       color: #333;
+      font-size: 16px;
     }
 
     .assessment-list {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 15px;
+      gap: 8px;
+      margin-top: 10px;
     }
 
     .assessment-tag {
       background: #667eea;
       color: white;
-      padding: 8px 15px;
+      padding: 6px 12px;
       border-radius: 20px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
+      font-size: 13px;
     }
 
     .assessment-tag button {
@@ -213,10 +197,7 @@
       height: 20px;
       cursor: pointer;
       font-size: 12px;
-    }
-
-    .assessment-tag button:hover {
-      background: rgba(255,255,255,0.5);
+      line-height: 1;
     }
 
     #setupScreen, #dataEntryScreen {
@@ -224,15 +205,10 @@
     }
 
     .trial-selector {
-      margin-bottom: 30px;
-      padding: 20px;
+      margin-bottom: 20px;
+      padding: 15px;
       background: #f8f9fa;
       border-radius: 8px;
-    }
-
-    .trial-selector h3 {
-      margin-bottom: 15px;
-      color: #333;
     }
 
     .trial-list {
@@ -243,55 +219,77 @@
 
     .trial-card {
       background: white;
-      padding: 15px 20px;
+      padding: 12px 15px;
       border-radius: 8px;
       border: 2px solid #ddd;
       cursor: pointer;
       transition: all 0.3s;
-    }
-
-    .trial-card:hover {
-      border-color: #667eea;
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
-    }
-
-    .trial-card.active {
-      border-color: #667eea;
-      background: #f0f4ff;
+      font-size: 14px;
+      flex: 1 1 calc(50% - 5px);
+      min-width: 150px;
     }
 
     .voice-controls {
-      margin-top: 20px;
-      padding: 20px;
+      margin-top: 15px;
+      padding: 15px;
       background: #f0f4ff;
       border-radius: 8px;
       border: 2px solid #667eea;
     }
 
+    .voice-controls h3 {
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
     .voice-status {
-      padding: 15px;
+      padding: 12px;
       background: white;
       border-radius: 8px;
-      margin-top: 15px;
-      font-size: 18px;
+      margin-top: 10px;
+      font-size: 14px;
       text-align: center;
-      min-height: 60px;
+      min-height: 50px;
       display: flex;
       align-items: center;
       justify-content: center;
+      word-wrap: break-word;
     }
 
     .mode-toggle {
       display: flex;
-      gap: 10px;
-      margin-top: 15px;
-      align-items: center;
+      gap: 8px;
+      margin: 10px 0;
+      flex-direction: column;
     }
 
     .mode-toggle label {
       font-weight: 600;
       color: #333;
+      font-size: 14px;
+    }
+
+    .mode-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    @media (min-width: 768px) {
+      .container {
+        max-width: 1400px;
+      }
+      
+      .header h1 {
+        font-size: 2em;
+      }
+      
+      .btn {
+        width: auto;
+      }
+      
+      .trial-card {
+        flex: 0 1 auto;
+      }
     }
   </style>
 </head>
@@ -309,14 +307,14 @@
           <h3>Select Existing Trial</h3>
           <div class="trial-list" id="trialList"></div>
         </div>
-        <button class="btn btn-primary" onclick="showSetupScreen()" style="font-size: 18px; padding: 15px 40px;">
+        <button class="btn btn-primary" onclick="showSetupScreen()">
           ➕ Create New Trial
         </button>
       </div>
 
       <!-- Setup Screen -->
       <div id="setupScreen">
-        <h2 style="margin-bottom: 30px; color: #333;">Create New Trial</h2>
+        <h2 style="margin-bottom: 20px; color: #333; font-size: 1.3em;">Create New Trial</h2>
         
         <div class="form-group">
           <label for="code">Trial Code</label>
@@ -338,7 +336,7 @@
           <input type="number" id="subplots" min="1" value="2">
         </div>
 
-        <button class="btn btn-primary" onclick="createTrial()" style="font-size: 18px; padding: 15px 40px;">
+        <button class="btn btn-primary" onclick="createTrial()">
           Create Trial
         </button>
         <button class="btn btn-secondary" onclick="backToSelection()">
@@ -348,32 +346,33 @@
 
       <!-- Data Entry Screen -->
       <div id="dataEntryScreen">
-        <h2 id="trialTitle" style="margin-bottom: 20px; color: #333;"></h2>
+        <h2 id="trialTitle" style="margin-bottom: 15px; color: #333; font-size: 1.2em;"></h2>
 
         <div class="assessment-manager">
           <h3>Assessment Columns</h3>
-          <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <input type="text" id="newAssessment" placeholder="e.g., Plant Height" style="flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 8px;">
-            <button class="btn btn-primary" onclick="addAssessment()">Add Column</button>
+          <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+            <input type="text" id="newAssessment" placeholder="e.g., Plant Height" style="flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+            <button class="btn btn-primary" onclick="addAssessment()" style="width: auto; padding: 10px 20px;">Add</button>
           </div>
           <div class="assessment-list" id="assessmentList"></div>
         </div>
 
-        <!-- Voice Recording Controls -->
         <div class="voice-controls">
           <h3>🎤 Voice Recording</h3>
           
           <div class="mode-toggle">
             <label>Recording Mode:</label>
-            <button class="btn btn-primary" id="oneAtATimeBtn" onclick="setRecordingMode('oneAtATime')">
-              One-at-a-Time
-            </button>
-            <button class="btn btn-secondary" id="batchBtn" onclick="setRecordingMode('batch')">
-              Batch Mode
-            </button>
+            <div class="mode-buttons">
+              <button class="btn btn-primary" id="oneAtATimeBtn" onclick="setRecordingMode('oneAtATime')" style="flex: 1;">
+                One-at-a-Time
+              </button>
+              <button class="btn btn-secondary" id="batchBtn" onclick="setRecordingMode('batch')" style="flex: 1;">
+                Batch Mode
+              </button>
+            </div>
           </div>
 
-          <div style="margin-top: 15px;">
+          <div style="margin-top: 10px;">
             <button class="btn btn-success" id="startVoiceBtn" onclick="startVoiceRecording()">
               🎤 Start Recording
             </button>
@@ -397,14 +396,14 @@
           </table>
         </div>
 
-        <div class="controls">
-          <button class="btn btn-success" onclick="exportToCSV()">📥 Export to CSV</button>
-          <button class="btn btn-secondary" onclick="backToSelection()">🔙 Back to Trials</button>
+        <div style="margin-top: 15px; display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn btn-success" onclick="exportToCSV()" style="flex: 1;">📥 Export CSV</button>
+          <button class="btn btn-secondary" onclick="backToSelection()" style="flex: 1;">🔙 Back</button>
         </div>
       </div>
     </div>
   </div>
- <script>
+    <script>
     let currentTrial = null;
     let trials = JSON.parse(localStorage.getItem('trials')) || [];
     let isRecording = false;
@@ -412,6 +411,8 @@
     let recognition = null;
     let currentCell = null;
     let recordingMode = 'oneAtATime';
+    let audioContext = null;
+    let batchValues = [];
 
     const wordToNumber = {
       'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
@@ -423,254 +424,105 @@
       'eighty': '80', 'ninety': '90', 'hundred': '100'
     };
 
-    function convertWordToNumber(text) {
-      const lowerText = text.toLowerCase().trim();
-      
-      if (!isNaN(lowerText)) {
-        return lowerText;
-      }
-      
-      if (wordToNumber[lowerText]) {
-        return wordToNumber[lowerText];
-      }
-      
-      const words = lowerText.split(/[\s-]+/);
-      if (words.length === 2) {
-        const tens = wordToNumber[words[0]];
-        const ones = wordToNumber[words[1]];
-        if (tens && ones && parseInt(tens) >= 20 && parseInt(ones) < 10) {
-          return String(parseInt(tens) + parseInt(ones));
-        }
-      }
-      
-      return text;
-    }
-
-    window.onload = function() {
-      loadTrials();
-      setupVoiceRecognition();
-    };
-
-    function setupVoiceRecognition() {
-      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = false;
-        recognition.lang = 'en-US';
-
-        recognition.onresult = function(event) {
-          const last = event.results.length - 1;
-          const text = event.results[last][0].transcript.trim();
-          
-          document.getElementById('voiceStatus').innerHTML = `Heard: "${text}"`;
-          
-          if (!currentCell || isPaused) return;
-          
-          // Split by commas for batch entry
-          const values = text.split(',').map(v => v.trim()).filter(v => v);
-          
-          if (recordingMode === 'batch') {
-            // In batch mode, split values go to consecutive cells
-            let cell = currentCell;
-            values.forEach((value, index) => {
-              if (cell) {
-                const convertedValue = convertWordToNumber(value);
-                cell.textContent = convertedValue;
-                
-                // Move to next cell for subsequent values
-                if (index < values.length - 1) {
-                  const allCells = Array.from(document.querySelectorAll('td[contenteditable="true"]'));
-                  const currentIndex = allCells.indexOf(cell);
-                  if (currentIndex < allCells.length - 1) {
-                    cell = allCells[currentIndex + 1];
-                  }
-                }
-              }
-            });
-            
-            // Update currentCell to last filled cell
-            currentCell = cell;
-            highlightCell(currentCell);
-            saveCurrentTrial();
-            
-          } else {
-            // One-at-a-time mode: only use first value, ignore rest
-            const convertedValue = convertWordToNumber(values[0]);
-            currentCell.textContent = convertedValue;
-            saveCurrentTrial();
-            moveToNextCell();
-          }
-        };
-
-        recognition.onerror = function(event) {
-          console.error('Speech recognition error:', event.error);
-          document.getElementById('voiceStatus').innerHTML = `Error: ${event.error}`;
-        };
-
-        recognition.onend = function() {
-          if (isRecording && !isPaused) {
-            recognition.start();
-          }
-        };
-      } else {
-        alert('Speech recognition not supported in this browser. Please use Chrome or Edge.');
+    // Initialize audio context for beep
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
       }
     }
 
-    function setRecordingMode(mode) {
-      recordingMode = mode;
-      
-      const oneBtn = document.getElementById('oneAtATimeBtn');
-      const batchBtn = document.getElementById('batchBtn');
-      
-      if (mode === 'oneAtATime') {
-        oneBtn.className = 'btn btn-primary';
-        batchBtn.className = 'btn btn-secondary';
-      } else {
-        oneBtn.className = 'btn btn-secondary';
-        batchBtn.className = 'btn btn-primary';
+    // Play beep sound when moving to next cell
+    function playBeep(frequency = 800, duration = 100) {
+      try {
+        if (!audioContext) initAudio();
+        
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = frequency;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + duration / 1000);
+      } catch (error) {
+        console.log('Audio not available:', error);
       }
     }
 
-    function startVoiceRecording() {
-      if (!recognition) {
-        alert('Speech recognition not available');
-        return;
-      }
-
-      isRecording = true;
-      isPaused = false;
-      
-      if (!currentCell) {
-        const firstCell = document.querySelector('td[contenteditable="true"]');
-        if (firstCell) {
-          currentCell = firstCell;
-          highlightCell(currentCell);
-        }
-      } else {
-        highlightCell(currentCell);
-      }
-
-      recognition.start();
-      
-      document.getElementById('startVoiceBtn').style.display = 'none';
-      document.getElementById('pauseVoiceBtn').style.display = 'inline-block';
-      document.getElementById('stopVoiceBtn').style.display = 'inline-block';
-      document.getElementById('voiceStatus').innerHTML = '🎤 Listening...';
+    // Initialize app
+    function init() {
+      loadTrialList();
+      showScreen('trialSelectionScreen');
     }
 
-    function pauseVoiceRecording() {
-      isPaused = true;
-      recognition.stop();
-      
-      document.getElementById('pauseVoiceBtn').style.display = 'none';
-      document.getElementById('startVoiceBtn').style.display = 'inline-block';
-      document.getElementById('voiceStatus').innerHTML = '⏸️ Paused - Tap a cell to select, then hit Start to resume';
+    // Screen navigation
+    function showScreen(screenId) {
+      document.getElementById('trialSelectionScreen').style.display = 'none';
+      document.getElementById('setupScreen').style.display = 'none';
+      document.getElementById('dataEntryScreen').style.display = 'none';
+      document.getElementById(screenId).style.display = 'block';
     }
 
-    function stopVoiceRecording() {
-      isRecording = false;
-      isPaused = false;
-      recognition.stop();
-      
-      if (currentCell) {
-        currentCell.classList.remove('cell-highlight');
-        currentCell = null;
-      }
-      
-      document.getElementById('startVoiceBtn').style.display = 'inline-block';
-      document.getElementById('pauseVoiceBtn').style.display = 'none';
-      document.getElementById('stopVoiceBtn').style.display = 'none';
-      document.getElementById('voiceStatus').innerHTML = 'Ready to record';
+    function showSetupScreen() {
+      showScreen('setupScreen');
     }
 
-    function highlightCell(cell) {
-      document.querySelectorAll('td').forEach(td => td.classList.remove('cell-highlight'));
-      if (cell) {
-        cell.classList.add('cell-highlight');
-      }
+    function backToSelection() {
+      if (isRecording) stopVoiceRecording();
+      currentTrial = null;
+      showScreen('trialSelectionScreen');
     }
 
-    function moveToNextCell() {
-      if (!currentCell) return;
-
-      const allCells = Array.from(document.querySelectorAll('td[contenteditable="true"]'));
-      const currentIndex = allCells.indexOf(currentCell);
-      
-      if (currentIndex < allCells.length - 1) {
-        currentCell = allCells[currentIndex + 1];
-        highlightCell(currentCell);
-      } else {
-        stopVoiceRecording();
-        alert('Reached end of data entry');
-      }
-    }
-
-    document.addEventListener('click', function(e) {
-      if (e.target.tagName === 'TD' && e.target.hasAttribute('contenteditable')) {
-        if (isRecording || isPaused) {
-          currentCell = e.target;
-          highlightCell(currentCell);
-        }
-      }
-    });
-
-    function loadTrials() {
+    // Load trial list
+    function loadTrialList() {
       const trialList = document.getElementById('trialList');
       trialList.innerHTML = '';
-
+      
       if (trials.length === 0) {
-        trialList.innerHTML = '<p style="color: #666;">No trials yet. Create your first trial!</p>';
+        trialList.innerHTML = '<p style="color: #666; font-size: 14px;">No trials yet. Create one to get started!</p>';
         return;
       }
-
+      
       trials.forEach((trial, index) => {
         const card = document.createElement('div');
         card.className = 'trial-card';
         card.innerHTML = `
           <strong>${trial.code}</strong><br>
-          <small>${trial.treatments} treatments × ${trial.reps} reps × ${trial.subplots} subplots</small>
+          <small>${trial.treatments} treatments × ${trial.reps} reps</small>
         `;
         card.onclick = () => loadTrial(index);
         trialList.appendChild(card);
       });
     }
 
-    function showSetupScreen() {
-      document.getElementById('trialSelectionScreen').style.display = 'none';
-      document.getElementById('setupScreen').style.display = 'block';
-    }
-
-    function backToSelection() {
-      document.getElementById('setupScreen').style.display = 'none';
-      document.getElementById('dataEntryScreen').style.display = 'none';
-      document.getElementById('trialSelectionScreen').style.display = 'block';
-      currentTrial = null;
-      stopVoiceRecording();
-      loadTrials();
-    }
-
+    // Create new trial
     function createTrial() {
       const code = document.getElementById('code').value.trim();
       const treatments = parseInt(document.getElementById('treatments').value);
       const reps = parseInt(document.getElementById('reps').value);
       const subplots = parseInt(document.getElementById('subplots').value);
-
+      
       if (!code) {
         alert('Please enter a trial code');
         return;
       }
-
+      
       const trial = {
-        code: code,
-        treatments: treatments,
-        reps: reps,
-        subplots: subplots,
+        code,
+        treatments,
+        reps,
+        subplots,
         assessments: [],
         data: []
       };
-
+      
+      // Initialize data structure
       for (let t = 1; t <= treatments; t++) {
         for (let r = 1; r <= reps; r++) {
           for (let s = 1; s <= subplots; s++) {
@@ -683,32 +535,32 @@
           }
         }
       }
-
+      
       trials.push(trial);
       localStorage.setItem('trials', JSON.stringify(trials));
       
-      loadTrial(trials.length - 1);
+      currentTrial = trials.length - 1;
+      loadTrial(currentTrial);
     }
 
+    // Load existing trial
     function loadTrial(index) {
       currentTrial = index;
-      const trial = trials[index];
-
-      document.getElementById('trialSelectionScreen').style.display = 'none';
-      document.getElementById('setupScreen').style.display = 'none';
-      document.getElementById('dataEntryScreen').style.display = 'block';
-
+      const trial = trials[currentTrial];
+      
       document.getElementById('trialTitle').textContent = `Trial: ${trial.code}`;
-
+      
       renderAssessments();
       renderTable();
+      showScreen('dataEntryScreen');
     }
 
+    // Render assessment tags
     function renderAssessments() {
       const trial = trials[currentTrial];
       const list = document.getElementById('assessmentList');
       list.innerHTML = '';
-
+      
       trial.assessments.forEach((assessment, index) => {
         const tag = document.createElement('div');
         tag.className = 'assessment-tag';
@@ -720,100 +572,401 @@
       });
     }
 
+    // Add assessment column
     function addAssessment() {
       const input = document.getElementById('newAssessment');
-      const name = input.value.trim();
-
-      if (!name) {
-        alert('Please enter an assessment name');
+      const assessment = input.value.trim();
+      
+      if (!assessment) return;
+      
+      const trial = trials[currentTrial];
+      
+      if (trial.assessments.includes(assessment)) {
+        alert('This assessment already exists');
         return;
       }
-
-      const trial = trials[currentTrial];
-      trial.assessments.push(name);
       
-      trial.data.forEach(row => {
-        row.values[name] = '';
-      });
-
-      saveCurrentTrial();
-      renderAssessments();
-      renderTable();
+      trial.assessments.push(assessment);
+      localStorage.setItem('trials', JSON.stringify(trials));
       
       input.value = '';
+      renderAssessments();
+      renderTable();
     }
 
+    // Remove assessment column
     function removeAssessment(index) {
       if (!confirm('Remove this assessment column?')) return;
-
+      
       const trial = trials[currentTrial];
-      const assessmentName = trial.assessments[index];
+      const assessment = trial.assessments[index];
       
       trial.assessments.splice(index, 1);
       
+      // Remove data for this assessment
       trial.data.forEach(row => {
-        delete row.values[assessmentName];
+        delete row.values[assessment];
       });
-
-      saveCurrentTrial();
+      
+      localStorage.setItem('trials', JSON.stringify(trials));
+      
       renderAssessments();
       renderTable();
     }
 
+    // Render data table
     function renderTable() {
       const trial = trials[currentTrial];
       const header = document.getElementById('tableHeader');
       const body = document.getElementById('tableBody');
-
+      
+      // Create header
       let headerHTML = '<tr><th>Treatment</th><th>Rep</th><th>Subplot</th>';
       trial.assessments.forEach(assessment => {
         headerHTML += `<th>${assessment}</th>`;
       });
       headerHTML += '</tr>';
       header.innerHTML = headerHTML;
-
+      
+      // Create body
       body.innerHTML = '';
       trial.data.forEach((row, rowIndex) => {
         const tr = document.createElement('tr');
-        
         tr.innerHTML = `
           <td>${row.treatment}</td>
           <td>${row.rep}</td>
           <td>${row.subplot}</td>
         `;
-
+        
         trial.assessments.forEach(assessment => {
           const td = document.createElement('td');
           td.contentEditable = true;
           td.textContent = row.values[assessment] || '';
+          td.dataset.row = rowIndex;
+          td.dataset.assessment = assessment;
+          
           td.addEventListener('blur', function() {
-            row.values[assessment] = this.textContent.trim();
-            saveCurrentTrial();
+            saveCell(this);
           });
+          
+          td.addEventListener('focus', function() {
+            currentCell = this;
+            highlightCell(this);
+          });
+          
           tr.appendChild(td);
         });
-
+        
         body.appendChild(tr);
       });
     }
 
-    function saveCurrentTrial() {
-      localStorage.setItem('trials', JSON.stringify(trials));
+    // Highlight current cell
+    function highlightCell(cell) {
+      document.querySelectorAll('td').forEach(td => {
+        td.classList.remove('cell-highlight');
+      });
+      if (cell) {
+        cell.classList.add('cell-highlight');
+      }
     }
 
+    // Save cell data
+    function saveCell(cell) {
+      const trial = trials[currentTrial];
+      const rowIndex = parseInt(cell.dataset.row);
+      const assessment = cell.dataset.assessment;
+      const value = cell.textContent.trim();
+      
+      trial.data[rowIndex].values[assessment] = value;
+      localStorage.setItem('trials', JSON.stringify(trials));
+    }
+          // Set recording mode
+    function setRecordingMode(mode) {
+      recordingMode = mode;
+      
+      document.getElementById('oneAtATimeBtn').className = 
+        mode === 'oneAtATime' ? 'btn btn-primary' : 'btn btn-secondary';
+      document.getElementById('batchBtn').className = 
+        mode === 'batch' ? 'btn btn-primary' : 'btn btn-secondary';
+      
+      const status = document.getElementById('voiceStatus');
+      if (mode === 'oneAtATime') {
+        status.textContent = 'Mode: One value per cell (auto-advance)';
+      } else {
+        status.textContent = 'Mode: Batch (comma-separated values)';
+      }
+    }
+
+    // Initialize speech recognition
+    function initRecognition() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert('Speech recognition not supported in this browser. Please use Chrome or Edge.');
+        return null;
+      }
+      
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recog = new SpeechRecognition();
+      
+      recog.continuous = true;
+      recog.interimResults = true;
+      recog.lang = 'en-US';
+      
+      recog.onresult = (event) => {
+        if (isPaused) return;
+        
+        const last = event.results.length - 1;
+        const transcript = event.results[last][0].transcript.trim();
+        const isFinal = event.results[last].isFinal;
+        
+        document.getElementById('voiceStatus').textContent = 
+          `${isFinal ? '✓' : '...'} "${transcript}"`;
+        
+        if (isFinal) {
+          processVoiceInput(transcript);
+        }
+      };
+      
+      recog.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        if (event.error === 'no-speech') {
+          document.getElementById('voiceStatus').textContent = 'Listening... (say a value)';
+        }
+      };
+      
+      recog.onend = () => {
+        if (isRecording && !isPaused) {
+          recognition.start();
+        }
+      };
+      
+      return recog;
+    }
+
+    // Process voice input
+    function processVoiceInput(transcript) {
+      if (!currentCell) {
+        findNextEmptyCell();
+        if (!currentCell) {
+          document.getElementById('voiceStatus').textContent = 'All cells filled!';
+          stopVoiceRecording();
+          return;
+        }
+      }
+      
+      if (recordingMode === 'batch') {
+        processBatchInput(transcript);
+      } else {
+        processOneAtATimeInput(transcript);
+      }
+    }
+
+    // Process one-at-a-time mode
+    function processOneAtATimeInput(transcript) {
+      const value = parseTranscript(transcript);
+      
+      if (value) {
+        currentCell.textContent = value;
+        saveCell(currentCell);
+        
+        // Play beep before moving to next cell
+        playBeep();
+        
+        // Move to next cell after short delay
+        setTimeout(() => {
+          moveToNextCell();
+        }, 150);
+      }
+    }
+
+    // Process batch mode (comma-separated values)
+    function processBatchInput(transcript) {
+      // Split by commas and clean up each value
+      const values = transcript.split(',')
+        .map(v => parseTranscript(v.trim()))
+        .filter(v => v !== null && v !== '');
+      
+      if (values.length === 0) return;
+      
+      let cellsToFill = [currentCell];
+      let tempCell = currentCell;
+      
+      // Find next cells to fill
+      for (let i = 1; i < values.length; i++) {
+        tempCell = getNextEditableCell(tempCell);
+        if (tempCell) {
+          cellsToFill.push(tempCell);
+        } else {
+          break;
+        }
+      }
+      
+      // Fill the cells
+      cellsToFill.forEach((cell, index) => {
+        if (index < values.length) {
+          cell.textContent = values[index];
+          saveCell(cell);
+        }
+      });
+      
+      // Play beep and move to next empty cell
+      playBeep();
+      
+      setTimeout(() => {
+        const lastFilledCell = cellsToFill[cellsToFill.length - 1];
+        const nextCell = getNextEditableCell(lastFilledCell);
+        if (nextCell) {
+          currentCell = nextCell;
+          highlightCell(currentCell);
+          currentCell.focus();
+        } else {
+          document.getElementById('voiceStatus').textContent = 'All cells filled!';
+          stopVoiceRecording();
+        }
+      }, 150);
+    }
+
+    // Parse transcript to number
+    function parseTranscript(transcript) {
+      const lower = transcript.toLowerCase().trim();
+      
+      // Handle "point" or "dot" for decimals
+      let cleaned = lower.replace(/\s+(point|dot)\s+/g, '.');
+      
+      // Convert words to numbers
+      Object.keys(wordToNumber).forEach(word => {
+        cleaned = cleaned.replace(new RegExp('\\b' + word + '\\b', 'g'), wordToNumber[word]);
+      });
+      
+      // Extract number (including decimals and negatives)
+      const match = cleaned.match(/-?\d+\.?\d*/);
+      return match ? match[0] : null;
+    }
+
+    // Get next editable cell
+    function getNextEditableCell(fromCell) {
+      if (!fromCell) return null;
+      
+      const allCells = Array.from(document.querySelectorAll('td[contenteditable="true"]'));
+      const currentIndex = allCells.indexOf(fromCell);
+      
+      if (currentIndex === -1 || currentIndex >= allCells.length - 1) {
+        return null;
+      }
+      
+      return allCells[currentIndex + 1];
+    }
+
+    // Move to next cell
+    function moveToNextCell() {
+      const nextCell = getNextEditableCell(currentCell);
+      
+      if (nextCell) {
+        currentCell = nextCell;
+        highlightCell(currentCell);
+        currentCell.focus();
+      } else {
+        document.getElementById('voiceStatus').textContent = 'All cells filled!';
+        stopVoiceRecording();
+      }
+    }
+
+    // Find next empty cell
+    function findNextEmptyCell() {
+      const cells = document.querySelectorAll('td[contenteditable="true"]');
+      for (let cell of cells) {
+        if (!cell.textContent.trim()) {
+          currentCell = cell;
+          highlightCell(currentCell);
+          currentCell.focus();
+          return;
+        }
+      }
+      currentCell = null;
+    }
+
+    // Start voice recording
+    function startVoiceRecording() {
+      initAudio(); // Initialize audio context for beeps
+      
+      if (!recognition) {
+        recognition = initRecognition();
+        if (!recognition) return;
+      }
+      
+      if (!currentCell) {
+        findNextEmptyCell();
+        if (!currentCell) {
+          alert('No empty cells to fill!');
+          return;
+        }
+      }
+      
+      isRecording = true;
+      isPaused = false;
+      
+      try {
+        recognition.start();
+        
+        document.getElementById('startVoiceBtn').style.display = 'none';
+        document.getElementById('pauseVoiceBtn').style.display = 'inline-block';
+        document.getElementById('stopVoiceBtn').style.display = 'inline-block';
+        
+        document.getElementById('voiceStatus').textContent = '🎤 Recording... Speak now!';
+      } catch (error) {
+        console.error('Error starting recognition:', error);
+      }
+    }
+
+    // Pause voice recording
+    function pauseVoiceRecording() {
+      isPaused = !isPaused;
+      
+      const btn = document.getElementById('pauseVoiceBtn');
+      if (isPaused) {
+        btn.textContent = '▶️ Resume';
+        document.getElementById('voiceStatus').textContent = '⏸️ Paused';
+      } else {
+        btn.textContent = '⏸️ Pause';
+        document.getElementById('voiceStatus').textContent = '🎤 Recording... Speak now!';
+      }
+    }
+
+    // Stop voice recording
+    function stopVoiceRecording() {
+      if (recognition) {
+        recognition.stop();
+      }
+      
+      isRecording = false;
+      isPaused = false;
+      
+      document.getElementById('startVoiceBtn').style.display = 'inline-block';
+      document.getElementById('pauseVoiceBtn').style.display = 'none';
+      document.getElementById('stopVoiceBtn').style.display = 'none';
+      
+      document.getElementById('voiceStatus').textContent = 'Recording stopped';
+      
+      highlightCell(null);
+    }
+
+    // Export to CSV
     function exportToCSV() {
       const trial = trials[currentTrial];
       
       let csv = 'Treatment,Rep,Subplot,' + trial.assessments.join(',') + '\n';
       
       trial.data.forEach(row => {
-        let rowData = [row.treatment, row.rep, row.subplot];
+        let line = `${row.treatment},${row.rep},${row.subplot}`;
+        
         trial.assessments.forEach(assessment => {
-          rowData.push(row.values[assessment] || '');
+          const value = row.values[assessment] || '';
+          line += ',' + value;
         });
-        csv += rowData.join(',') + '\n';
+        
+        csv += line + '\n';
       });
-
+      
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -822,6 +975,9 @@
       a.click();
       window.URL.revokeObjectURL(url);
     }
+
+    // Initialize on page load
+    window.onload = init;
   </script>
 </body>
 </html>
