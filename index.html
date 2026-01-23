@@ -269,6 +269,13 @@
       outline: 2px solid #f59e0b !important;
     }
 
+    /* ERROR STATE - VALUE > 100 */
+    .error-cell {
+      background: #fee2e2 !important;
+      color: #991b1b !important;
+      font-weight: 600;
+    }
+
     /* PLOT COLOR CLASSES */
     .plot-color-0 { background: #dbeafe !important; }
     .plot-color-1 { background: #dcfce7 !important; }
@@ -623,6 +630,18 @@ function showToast(message) {
   setTimeout(() => toast.remove(), 2000);
 }
 
+// Validate cell value (max 100)
+function validateCellValue(cell) {
+  const value = parseFloat(cell.textContent);
+  if (!isNaN(value) && value > 100) {
+    cell.classList.add('error-cell');
+    return false;
+  } else {
+    cell.classList.remove('error-cell');
+    return true;
+  }
+}
+
 // Show specific page
 function showPage(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -715,7 +734,6 @@ function deleteTrial(index) {
 
 // Get color class for plot number
 function getPlotColorClass(plotNumber) {
-  // Use plot number to determine color (10 different colors)
   const colorIndex = plotNumber % 10;
   return `plot-color-${colorIndex}`;
 }
@@ -754,12 +772,10 @@ function generateTable() {
       for (let subplot = 1; subplot <= numSubplots; subplot++) {
         const row = tbody.insertRow();
         
-        // PLOT CELL WITH COLOR
         const plotCell = row.insertCell();
         plotCell.textContent = plotNumber;
         plotCell.className = colorClass;
         
-        // SUBPLOT CELL WITH SAME COLOR
         const subplotCell = row.insertCell();
         subplotCell.textContent = subplot;
         subplotCell.className = colorClass;
@@ -775,7 +791,12 @@ function generateTable() {
           });
           
           cell.addEventListener('blur', function() {
+            validateCellValue(this);
             saveTrialData();
+          });
+          
+          cell.addEventListener('input', function() {
+            validateCellValue(this);
           });
           
           cell.addEventListener('keydown', function(e) {
@@ -1119,7 +1140,7 @@ function parseTranscript(text) {
   return null;
 }
 
-// Process voice input - NUMBERS ONLY
+// Process voice input - NUMBERS ONLY with validation
 function processVoiceInput(transcript) {
   const value = parseTranscript(transcript);
   
@@ -1129,6 +1150,7 @@ function processVoiceInput(transcript) {
   }
   
   currentCell.textContent = value;
+  validateCellValue(currentCell);
   saveTrialData();
   
   setTimeout(() => {
@@ -1144,16 +1166,39 @@ function processVoiceInput(transcript) {
   }, 150);
 }
 
-// Process batch input - NUMBERS ONLY
+// Process batch input - FIXED FOR REPEATED SINGLE DIGITS
 function processBatchInput(transcript) {
   let values = [];
-  const cleaned = transcript.trim();
+  const cleaned = transcript.trim().toLowerCase();
   
-  if (/^\d+$/.test(cleaned)) {
+  // Single-digit words that should be split individually
+  const singleDigitWords = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+  
+  // Check if transcript contains only single-digit words (e.g., "five five" or "one two three")
+  const words = cleaned.split(/\s+/);
+  const allSingleDigits = words.every(word => singleDigitWords.includes(word));
+  
+  if (allSingleDigits && words.length > 1) {
+    // "five five" → ["5", "5"]
+    // "one two three" → ["1", "2", "3"]
+    const wordToNum = {
+      'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
+      'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9'
+    };
+    values = words.map(w => wordToNum[w]).filter(v => v);
+  }
+  // Check if it's just digits separated by spaces
+  else if (/^\d+$/.test(cleaned)) {
+    // "123" → ["1", "2", "3"]
     values = cleaned.split('').filter(v => v);
-  } else if (/^[\d\s]+$/.test(cleaned) && cleaned.includes(' ')) {
+  }
+  // Check if it's digits with spaces
+  else if (/^[\d\s]+$/.test(cleaned) && cleaned.includes(' ')) {
+    // "1 2 3" → ["1", "2", "3"]
     values = cleaned.split(/\s+/).filter(v => v);
-  } else {
+  }
+  // Otherwise parse as comma-separated or mixed values
+  else {
     values = cleaned.split(/[,\s]+/)
       .map(v => parseTranscript(v.trim()))
       .filter(v => v !== null);
@@ -1164,6 +1209,7 @@ function processBatchInput(transcript) {
     return;
   }
   
+  // Fill cells with values
   let cellsToFill = [currentCell];
   let tempCell = currentCell;
   
@@ -1179,6 +1225,7 @@ function processBatchInput(transcript) {
   cellsToFill.forEach((cell, index) => {
     if (index < values.length) {
       cell.textContent = values[index];
+      validateCellValue(cell);
     }
   });
   
@@ -1221,6 +1268,9 @@ function loadTrialData(data) {
       Array.from(row.cells).forEach((cell, cellIndex) => {
         if (data[rowIndex][cellIndex] !== undefined) {
           cell.textContent = data[rowIndex][cellIndex];
+          if (cell.hasAttribute('contenteditable')) {
+            validateCellValue(cell);
+          }
         }
       });
     }
