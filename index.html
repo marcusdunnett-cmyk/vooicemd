@@ -511,10 +511,10 @@
         <div class="control-group">
           <label>Voice Input Mode:</label>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="mode-btn active" data-mode="one" style="flex: 1; min-width: 120px;">
+            <button class="mode-btn" data-mode="one" style="flex: 1; min-width: 120px;">
               📝 One-at-a-Time
             </button>
-            <button class="mode-btn" data-mode="batch" style="flex: 1; min-width: 120px;">
+            <button class="mode-btn active" data-mode="batch" style="flex: 1; min-width: 120px;">
               📊 Batch Mode
             </button>
             <button id="directionToggle" class="mode-btn" style="flex: 1; min-width: 120px;">
@@ -565,10 +565,11 @@
 let currentCell = null;
 let isRecording = false;
 let recognition = null;
-let batchMode = false;
+let batchMode = true; // DEFAULT TO BATCH MODE
 let navigationDirection = 'horizontal';
 let currentTrial = null;
 let currentTrialIndex = -1;
+let currentPlotNumber = null; // TRACK CURRENT PLOT FOR BEEP
 
 // Audio context for beep
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -887,22 +888,41 @@ function highlightCell(cell) {
   cell.classList.add('highlight');
 }
 
-// Get next editable cell
+// Get plot number from cell
+function getPlotNumberFromCell(cell) {
+  if (!cell) return null;
+  const row = cell.parentElement;
+  if (!row || !row.cells[0]) return null;
+  return parseInt(row.cells[0].textContent);
+}
+
+// Get next editable cell with plot change detection
 function getNextEditableCell(cell) {
   if (!cell) return null;
   
+  // Store current plot number before moving
+  const oldPlotNumber = getPlotNumberFromCell(cell);
+  
+  let nextCell = null;
+  
   if (navigationDirection === 'horizontal') {
-    let nextCell = cell.nextElementSibling;
+    nextCell = cell.nextElementSibling;
     while (nextCell && !nextCell.hasAttribute('contenteditable')) {
       nextCell = nextCell.nextElementSibling;
     }
     
-    if (nextCell) return nextCell;
+    if (nextCell) {
+      checkAndBeepOnPlotChange(oldPlotNumber, nextCell);
+      return nextCell;
+    }
     
     let nextRow = cell.parentElement.nextElementSibling;
     while (nextRow) {
       let firstEditableCell = nextRow.querySelector('td[contenteditable="true"]');
-      if (firstEditableCell) return firstEditableCell;
+      if (firstEditableCell) {
+        checkAndBeepOnPlotChange(oldPlotNumber, firstEditableCell);
+        return firstEditableCell;
+      }
       nextRow = nextRow.nextElementSibling;
     }
     return null;
@@ -915,6 +935,7 @@ function getNextEditableCell(cell) {
     while (nextRow) {
       const sameColumnCell = nextRow.cells[currentCellIndex];
       if (sameColumnCell && sameColumnCell.hasAttribute('contenteditable')) {
+        checkAndBeepOnPlotChange(oldPlotNumber, sameColumnCell);
         return sameColumnCell;
       }
       nextRow = nextRow.nextElementSibling;
@@ -926,11 +947,22 @@ function getNextEditableCell(cell) {
     for (let i = currentCellIndex + 1; i < firstRow.cells.length; i++) {
       const nextColCell = firstRow.cells[i];
       if (nextColCell && nextColCell.hasAttribute('contenteditable')) {
+        checkAndBeepOnPlotChange(oldPlotNumber, nextColCell);
         return nextColCell;
       }
     }
     
     return null;
+  }
+}
+
+// Check if plot changed and beep
+function checkAndBeepOnPlotChange(oldPlotNumber, newCell) {
+  const newPlotNumber = getPlotNumberFromCell(newCell);
+  
+  if (oldPlotNumber !== null && newPlotNumber !== null && oldPlotNumber !== newPlotNumber) {
+    // Plot changed! Play beep
+    playBeep();
   }
 }
 
@@ -1004,6 +1036,9 @@ function startVoiceRecording() {
     currentCell.focus();
   }
   
+  // Set initial plot number
+  currentPlotNumber = getPlotNumberFromCell(currentCell);
+  
   try {
     recognition.start();
     isRecording = true;
@@ -1029,6 +1064,7 @@ function stopVoiceRecording() {
     recognition.stop();
   }
   isRecording = false;
+  currentPlotNumber = null;
   document.getElementById('voiceBtn').textContent = '🎤 Start Voice Input';
   document.getElementById('voiceBtn').className = 'btn-success';
   document.getElementById('voiceStatus').textContent = 'Ready to start';
@@ -1042,15 +1078,17 @@ function stopVoiceRecording() {
   showToast('⏹️ Voice input stopped');
 }
 
-// Parse transcript
+// Parse transcript - NUMBERS ONLY
 function parseTranscript(text) {
   text = text.toLowerCase().trim();
   
+  // Direct number match (including decimals and negatives)
   const directNumber = text.match(/^-?\d+\.?\d*$/);
   if (directNumber) {
     return text;
   }
   
+  // Word to number conversion
   const wordToNumber = {
     'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
     'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9',
@@ -1058,28 +1096,37 @@ function parseTranscript(text) {
     'fourteen': '14', 'fifteen': '15', 'sixteen': '16', 'seventeen': '17',
     'eighteen': '18', 'nineteen': '19', 'twenty': '20', 'thirty': '30',
     'forty': '40', 'fifty': '50', 'sixty': '60', 'seventy': '70',
-    'eighty': '80', 'ninety': '90'
+    'eighty': '80', 'ninety': '90', 'hundred': '100'
   };
   
   if (wordToNumber[text]) {
     return wordToNumber[text];
   }
   
+  // Decimal variations (e.g., "3 point 5" or "3 dot 5")
   const decimalMatch = text.match(/(\d+)\s*(?:point|dot)\s*(\d+)/);
   if (decimalMatch) {
     return `${decimalMatch[1]}.${decimalMatch[2]}`;
   }
   
-  return text;
+  // NOT A NUMBER - RETURN NULL
+  return null;
 }
 
-// Process voice input
+// Process voice input - NUMBERS ONLY
 function processVoiceInput(transcript) {
   const value = parseTranscript(transcript);
+  
+  // IGNORE IF NOT A NUMBER
+  if (value === null) {
+    console.log('Ignored non-numeric input:', transcript);
+    return;
+  }
+  
   currentCell.textContent = value;
   saveTrialData();
   
-  playBeep();
+  // Don't beep here - beep happens in getNextEditableCell
   
   setTimeout(() => {
     const nextCell = getNextEditableCell(currentCell);
@@ -1094,22 +1141,30 @@ function processVoiceInput(transcript) {
   }, 150);
 }
 
-// Process batch input
+// Process batch input - NUMBERS ONLY
 function processBatchInput(transcript) {
   let values = [];
   const cleaned = transcript.trim();
   
+  // Try to extract numbers from transcript
   if (/^\d+$/.test(cleaned)) {
-    values = cleaned.split('');
+    // All digits, split into individual numbers
+    values = cleaned.split('').filter(v => v);
   } else if (/^[\d\s]+$/.test(cleaned) && cleaned.includes(' ')) {
+    // Space-separated numbers
     values = cleaned.split(/\s+/).filter(v => v);
   } else {
-    values = cleaned.split(',')
+    // Try comma-separated or parse each part
+    values = cleaned.split(/[,\s]+/)
       .map(v => parseTranscript(v.trim()))
-      .filter(v => v !== null && v !== '');
+      .filter(v => v !== null); // FILTER OUT NON-NUMBERS
   }
   
-  if (values.length === 0) return;
+  // IGNORE IF NO VALID NUMBERS FOUND
+  if (values.length === 0) {
+    console.log('Ignored non-numeric batch input:', transcript);
+    return;
+  }
   
   let cellsToFill = [currentCell];
   let tempCell = currentCell;
@@ -1130,7 +1185,8 @@ function processBatchInput(transcript) {
   });
   
   saveTrialData();
-  playBeep();
+  
+  // Don't beep here - beep happens in getNextEditableCell
   
   setTimeout(() => {
     const lastFilledCell = cellsToFill[cellsToFill.length - 1];
