@@ -338,14 +338,11 @@
       flex: 1;
     }
 
-    .scroll-top-btn {
+    .floating-btn {
       position: fixed;
-      bottom: 80px;
-      right: 20px;
       width: 50px;
       height: 50px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
       border: none;
       font-size: 24px;
@@ -358,12 +355,34 @@
       transition: all 0.3s;
     }
 
-    .scroll-top-btn.show {
+    .floating-btn.show {
       display: flex;
     }
 
-    .scroll-top-btn:active {
+    .floating-btn:active {
       transform: scale(0.95);
+    }
+
+    .scroll-top-btn {
+      bottom: 80px;
+      right: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .voice-float-btn {
+      bottom: 140px;
+      right: 20px;
+      background: #10b981;
+    }
+
+    .voice-float-btn.recording {
+      background: #ef4444;
+      animation: pulse-btn 1s infinite;
+    }
+
+    @keyframes pulse-btn {
+      0%, 100% { box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 4px 20px rgba(239, 68, 68, 0.7); }
     }
 
     @media (max-width: 768px) {
@@ -388,12 +407,20 @@
         max-width: 100%;
       }
 
-      .scroll-top-btn {
-        bottom: 70px;
-        right: 15px;
+      .floating-btn {
         width: 45px;
         height: 45px;
         font-size: 20px;
+      }
+
+      .scroll-top-btn {
+        bottom: 70px;
+        right: 15px;
+      }
+
+      .voice-float-btn {
+        bottom: 125px;
+        right: 15px;
       }
     }
   </style>
@@ -468,6 +495,12 @@
     <div id="dataEntryPage" class="page">
       <div class="controls">
         <div class="control-group">
+          <button class="btn-secondary" onclick="saveAndExit()">
+            💾 Save & Exit
+          </button>
+        </div>
+
+        <div class="control-group">
           <label>🔍 Search Plot:</label>
           <div class="search-container">
             <input type="number" id="searchPlot" placeholder="Enter plot number (e.g., 201)">
@@ -519,9 +552,12 @@
     </div>
   </div>
 
-  <!-- Scroll to Top Button -->
-  <button class="scroll-top-btn" id="scrollTopBtn" onclick="scrollToTop()">
+  <!-- Floating Buttons -->
+  <button class="floating-btn scroll-top-btn" id="scrollTopBtn" onclick="scrollToTop()">
     ⬆️
+  </button>
+  <button class="floating-btn voice-float-btn" id="voiceFloatBtn" onclick="toggleVoiceRecording()">
+    🎤
   </button>
 
 <script>
@@ -578,6 +614,22 @@ function showToast(message) {
 function showPage(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(pageId).classList.add('active');
+  
+  // Show/hide floating buttons based on page
+  const voiceFloatBtn = document.getElementById('voiceFloatBtn');
+  const scrollTopBtn = document.getElementById('scrollTopBtn');
+  
+  if (pageId === 'dataEntryPage') {
+    // Show buttons after a short delay to check if table exists
+    setTimeout(() => {
+      if (document.querySelector('#dataTable tbody tr')) {
+        voiceFloatBtn.classList.add('show');
+      }
+    }, 100);
+  } else {
+    voiceFloatBtn.classList.remove('show');
+    scrollTopBtn.classList.remove('show');
+  }
 }
 
 // Start new trial
@@ -796,13 +848,17 @@ function scrollToTop() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// Show/hide scroll to top button
+// Show/hide floating buttons
 window.addEventListener('scroll', function() {
   const scrollBtn = document.getElementById('scrollTopBtn');
-  if (window.pageYOffset > 300) {
-    scrollBtn.classList.add('show');
-  } else {
-    scrollBtn.classList.remove('show');
+  const activePage = document.querySelector('.page.active');
+  
+  if (activePage && activePage.id === 'dataEntryPage') {
+    if (window.pageYOffset > 300) {
+      scrollBtn.classList.add('show');
+    } else {
+      scrollBtn.classList.remove('show');
+    }
   }
 });
 
@@ -812,10 +868,14 @@ document.addEventListener('DOMContentLoaded', function() {
   if (tableContainer) {
     tableContainer.addEventListener('scroll', function() {
       const scrollBtn = document.getElementById('scrollTopBtn');
-      if (tableContainer.scrollTop > 300 || window.pageYOffset > 300) {
-        scrollBtn.classList.add('show');
-      } else {
-        scrollBtn.classList.remove('show');
+      const activePage = document.querySelector('.page.active');
+      
+      if (activePage && activePage.id === 'dataEntryPage') {
+        if (tableContainer.scrollTop > 300 || window.pageYOffset > 300) {
+          scrollBtn.classList.add('show');
+        } else {
+          scrollBtn.classList.remove('show');
+        }
       }
     });
   }
@@ -951,6 +1011,12 @@ function startVoiceRecording() {
     document.getElementById('voiceBtn').className = 'btn-danger';
     document.getElementById('voiceStatus').textContent = '🎤 Listening...';
     document.getElementById('voiceStatus').className = 'recording';
+    
+    // Update floating button
+    const voiceFloatBtn = document.getElementById('voiceFloatBtn');
+    voiceFloatBtn.textContent = '⏹️';
+    voiceFloatBtn.classList.add('recording');
+    
     showToast('🎤 Voice input started');
   } catch (e) {
     console.error('Start error:', e);
@@ -967,6 +1033,12 @@ function stopVoiceRecording() {
   document.getElementById('voiceBtn').className = 'btn-success';
   document.getElementById('voiceStatus').textContent = 'Ready to start';
   document.getElementById('voiceStatus').className = '';
+  
+  // Update floating button
+  const voiceFloatBtn = document.getElementById('voiceFloatBtn');
+  voiceFloatBtn.textContent = '🎤';
+  voiceFloatBtn.classList.remove('recording');
+  
   showToast('⏹️ Voice input stopped');
 }
 
