@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Voice Data Entry - Trial Management</title>
+  <title>VoiceMD - Voice Data Entry</title>
   <style>
     * {
       box-sizing: border-box;
@@ -50,6 +50,16 @@
 
     .home-content {
       padding: 20px;
+    }
+
+    .watermark {
+      text-align: center;
+      padding: 20px;
+      color: #9ca3af;
+      font-size: 13px;
+      font-style: italic;
+      border-top: 1px solid #e5e7eb;
+      margin-top: 20px;
     }
 
     .trial-list {
@@ -189,10 +199,28 @@
       color: white;
     }
 
+    .search-container {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .search-container input {
+      flex: 1;
+      margin-bottom: 0;
+    }
+
+    .search-container button {
+      width: auto;
+      padding: 12px 20px;
+      flex-shrink: 0;
+    }
+
     .table-container {
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
       padding: 15px;
+      scroll-behavior: smooth;
     }
 
     table {
@@ -234,6 +262,11 @@
       background: #dbeafe !important;
       outline: 3px solid #3b82f6 !important;
       animation: pulse 1s infinite;
+    }
+
+    .search-highlight {
+      background: #fef3c7 !important;
+      outline: 2px solid #f59e0b !important;
     }
 
     @keyframes pulse {
@@ -305,6 +338,34 @@
       flex: 1;
     }
 
+    .scroll-top-btn {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      transition: all 0.3s;
+    }
+
+    .scroll-top-btn.show {
+      display: flex;
+    }
+
+    .scroll-top-btn:active {
+      transform: scale(0.95);
+    }
+
     @media (max-width: 768px) {
       body {
         padding: 5px;
@@ -326,13 +387,21 @@
       table {
         max-width: 100%;
       }
+
+      .scroll-top-btn {
+        bottom: 70px;
+        right: 15px;
+        width: 45px;
+        height: 45px;
+        font-size: 20px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>🎤 Voice Data Entry System</h1>
+      <h1>🎤 VoiceMD</h1>
     </div>
 
     <!-- HOME PAGE -->
@@ -347,6 +416,10 @@
           <div id="trialListContainer">
             <!-- Trials will be loaded here -->
           </div>
+        </div>
+
+        <div class="watermark">
+          By Mr Sa
         </div>
       </div>
     </div>
@@ -395,6 +468,14 @@
     <div id="dataEntryPage" class="page">
       <div class="controls">
         <div class="control-group">
+          <label>🔍 Search Plot:</label>
+          <div class="search-container">
+            <input type="number" id="searchPlot" placeholder="Enter plot number (e.g., 201)">
+            <button class="btn-primary" onclick="searchPlot()">Search</button>
+          </div>
+        </div>
+
+        <div class="control-group">
           <label>Voice Input Mode:</label>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             <button class="mode-btn active" data-mode="one" style="flex: 1; min-width: 120px;">
@@ -422,7 +503,7 @@
         </div>
       </div>
 
-      <div class="table-container">
+      <div class="table-container" id="tableContainer">
         <table id="dataTable"></table>
       </div>
 
@@ -437,6 +518,11 @@
       </div>
     </div>
   </div>
+
+  <!-- Scroll to Top Button -->
+  <button class="scroll-top-btn" id="scrollTopBtn" onclick="scrollToTop()">
+    ⬆️
+  </button>
 
 <script>
 // Global variables
@@ -595,8 +681,6 @@ function generateTable() {
   const tbody = table.createTBody();
   
   // Generate rows with rep-based numbering
-  // Rep 1: 101, 102, 103...
-  // Rep 2: 201, 202, 203...
   for (let rep = 1; rep <= numReps; rep++) {
     for (let trt = 1; trt <= numTreatments; trt++) {
       const plotNumber = (rep * 100) + trt;
@@ -656,6 +740,86 @@ function generateTable() {
   showPage('dataEntryPage');
   showToast('✅ Table generated successfully');
 }
+
+// Search plot function
+function searchPlot() {
+  const plotNumber = parseInt(document.getElementById('searchPlot').value);
+  
+  if (!plotNumber) {
+    showToast('⚠️ Please enter a plot number');
+    return;
+  }
+  
+  // Remove previous search highlights
+  document.querySelectorAll('.search-highlight').forEach(cell => {
+    cell.classList.remove('search-highlight');
+  });
+  
+  const rows = document.querySelectorAll('#dataTable tbody tr');
+  let found = false;
+  
+  for (let row of rows) {
+    const plotCell = row.cells[0];
+    if (parseInt(plotCell.textContent) === plotNumber) {
+      // Highlight the row
+      for (let i = 0; i < row.cells.length; i++) {
+        row.cells[i].classList.add('search-highlight');
+      }
+      
+      // Scroll to the row
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // Focus on first editable cell of this row
+      const firstEditableCell = row.querySelector('td[contenteditable="true"]');
+      if (firstEditableCell) {
+        setTimeout(() => {
+          firstEditableCell.focus();
+          currentCell = firstEditableCell;
+        }, 500);
+      }
+      
+      found = true;
+      showToast(`✅ Plot ${plotNumber} found`);
+      break;
+    }
+  }
+  
+  if (!found) {
+    showToast(`❌ Plot ${plotNumber} not found`);
+  }
+}
+
+// Scroll to top function
+function scrollToTop() {
+  const tableContainer = document.getElementById('tableContainer');
+  tableContainer.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Show/hide scroll to top button
+window.addEventListener('scroll', function() {
+  const scrollBtn = document.getElementById('scrollTopBtn');
+  if (window.pageYOffset > 300) {
+    scrollBtn.classList.add('show');
+  } else {
+    scrollBtn.classList.remove('show');
+  }
+});
+
+// Also check table container scroll
+document.addEventListener('DOMContentLoaded', function() {
+  const tableContainer = document.getElementById('tableContainer');
+  if (tableContainer) {
+    tableContainer.addEventListener('scroll', function() {
+      const scrollBtn = document.getElementById('scrollTopBtn');
+      if (tableContainer.scrollTop > 300 || window.pageYOffset > 300) {
+        scrollBtn.classList.add('show');
+      } else {
+        scrollBtn.classList.remove('show');
+      }
+    });
+  }
+});
 
 // Highlight current cell
 function highlightCell(cell) {
@@ -951,10 +1115,8 @@ function saveAndExit() {
   const trials = JSON.parse(localStorage.getItem('trials') || '[]');
   
   if (currentTrialIndex >= 0) {
-    // Update existing trial
     trials[currentTrialIndex] = currentTrial;
   } else {
-    // Add new trial
     trials.push(currentTrial);
   }
   
