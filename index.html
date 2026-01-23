@@ -109,6 +109,16 @@
       background: #218838;
     }
 
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+      margin-left: 10px;
+    }
+
+    .btn-danger:hover {
+      background: #c82333;
+    }
+
     .table-container {
       overflow-x: auto;
       margin-top: 30px;
@@ -250,6 +260,39 @@
       border-color: #667eea;
       background: #f0f4ff;
     }
+
+    .voice-controls {
+      margin-top: 20px;
+      padding: 20px;
+      background: #f0f4ff;
+      border-radius: 8px;
+      border: 2px solid #667eea;
+    }
+
+    .voice-status {
+      padding: 15px;
+      background: white;
+      border-radius: 8px;
+      margin-top: 15px;
+      font-size: 18px;
+      text-align: center;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mode-toggle {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      align-items: center;
+    }
+
+    .mode-toggle label {
+      font-weight: 600;
+      color: #333;
+    }
   </style>
 </head>
 <body>
@@ -316,6 +359,37 @@
           <div class="assessment-list" id="assessmentList"></div>
         </div>
 
+        <!-- Voice Recording Controls -->
+        <div class="voice-controls">
+          <h3>🎤 Voice Recording</h3>
+          
+          <div class="mode-toggle">
+            <label>Recording Mode:</label>
+            <button class="btn btn-primary" id="oneAtATimeBtn" onclick="setRecordingMode('oneAtATime')">
+              One-at-a-Time
+            </button>
+            <button class="btn btn-secondary" id="batchBtn" onclick="setRecordingMode('batch')">
+              Batch Mode
+            </button>
+          </div>
+
+          <div style="margin-top: 15px;">
+            <button class="btn btn-success" id="startVoiceBtn" onclick="startVoiceRecording()">
+              🎤 Start Recording
+            </button>
+            <button class="btn btn-danger" id="pauseVoiceBtn" onclick="pauseVoiceRecording()" style="display: none;">
+              ⏸️ Pause
+            </button>
+            <button class="btn btn-secondary" id="stopVoiceBtn" onclick="stopVoiceRecording()" style="display: none;">
+              ⏹️ Stop
+            </button>
+          </div>
+
+          <div class="voice-status" id="voiceStatus">
+            Ready to record
+          </div>
+        </div>
+
         <div class="table-container">
           <table>
             <thead id="tableHeader"></thead>
@@ -330,306 +404,419 @@
       </div>
     </div>
   </div>
-    <script>
+  <script>
     let currentTrial = null;
-    let assessmentColumns = ['Plant Height', 'Yield', 'Disease Score'];
-    let currentCell = { row: 0, col: 0 }; // col 0 = first assessment column
+    let trials = JSON.parse(localStorage.getItem('trials')) || [];
+    let isRecording = false;
+    let isPaused = false;
+    let recognition = null;
+    let currentCell = null;
+    let recordingMode = 'oneAtATime'; // 'oneAtATime' or 'batch'
 
-    // Initialize app
-    window.onload = function() {
-      loadTrialList();
-      document.getElementById('trialSelectionScreen').style.display = 'block';
+    // Word to number conversion map
+    const wordToNumber = {
+      'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
+      'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9',
+      'ten': '10', 'eleven': '11', 'twelve': '12', 'thirteen': '13',
+      'fourteen': '14', 'fifteen': '15', 'sixteen': '16', 'seventeen': '17',
+      'eighteen': '18', 'nineteen': '19', 'twenty': '20', 'thirty': '30',
+      'forty': '40', 'fifty': '50', 'sixty': '60', 'seventy': '70',
+      'eighty': '80', 'ninety': '90', 'hundred': '100'
     };
 
-    // Load trial list from localStorage
-    function loadTrialList() {
-      const trials = getAllTrials();
-      const trialList = document.getElementById('trialList');
+    // Convert spoken words to numbers
+    function convertWordToNumber(text) {
+      const lowerText = text.toLowerCase().trim();
       
+      // Check if it's already a number
+      if (!isNaN(lowerText)) {
+        return lowerText;
+      }
+      
+      // Check direct word match
+      if (wordToNumber[lowerText]) {
+        return wordToNumber[lowerText];
+      }
+      
+      // Handle compound numbers like "twenty five" -> "25"
+      const words = lowerText.split(/[\s-]+/);
+      if (words.length === 2) {
+        const tens = wordToNumber[words[0]];
+        const ones = wordToNumber[words[1]];
+        if (tens && ones && parseInt(tens) >= 20 && parseInt(ones) < 10) {
+          return String(parseInt(tens) + parseInt(ones));
+        }
+      }
+      
+      return text; // Return original if no conversion found
+    }
+
+    // Initialize on page load
+    window.onload = function() {
+      loadTrials();
+      setupVoiceRecognition();
+    };
+
+    function setupVoiceRecognition() {
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+
+        recognition.onresult = function(event) {
+          const last = event.results.length - 1;
+          const text = event.results[last][0].transcript.trim();
+          
+          document.getElementById('voiceStatus').innerHTML = `Heard: "${text}"`;
+          
+          // Convert word to number
+          const convertedValue = convertWordToNumber(text);
+          
+          if (currentCell && !isPaused) {
+            currentCell.textContent = convertedValue;
+            saveCurrentTrial();
+            
+            if (recordingMode === 'oneAtATime') {
+              moveToNextCell();
+            } else {
+              // In batch mode, stay in same cell until manually moved
+              highlightCell(currentCell);
+            }
+          }
+        };
+
+        recognition.onerror = function(event) {
+          console.error('Speech recognition error:', event.error);
+          document.getElementById('voiceStatus').innerHTML = `Error: ${event.error}`;
+        };
+
+        recognition.onend = function() {
+          if (isRecording && !isPaused) {
+            recognition.start();
+          }
+        };
+      } else {
+        alert('Speech recognition not supported in this browser. Please use Chrome or Edge.');
+      }
+    }
+
+    function setRecordingMode(mode) {
+      recordingMode = mode;
+      
+      // Update button styles
+      const oneBtn = document.getElementById('oneAtATimeBtn');
+      const batchBtn = document.getElementById('batchBtn');
+      
+      if (mode === 'oneAtATime') {
+        oneBtn.className = 'btn btn-primary';
+        batchBtn.className = 'btn btn-secondary';
+      } else {
+        oneBtn.className = 'btn btn-secondary';
+        batchBtn.className = 'btn btn-primary';
+      }
+    }
+
+    function startVoiceRecording() {
+      if (!recognition) {
+        alert('Speech recognition not available');
+        return;
+      }
+
+      isRecording = true;
+      isPaused = false;
+      
+      // If no cell is selected, start from first assessment cell
+      if (!currentCell) {
+        const firstCell = document.querySelector('td[contenteditable="true"]');
+        if (firstCell) {
+          currentCell = firstCell;
+          highlightCell(currentCell);
+        }
+      } else {
+        // Resume from currently selected cell
+        highlightCell(currentCell);
+      }
+
+      recognition.start();
+      
+      document.getElementById('startVoiceBtn').style.display = 'none';
+      document.getElementById('pauseVoiceBtn').style.display = 'inline-block';
+      document.getElementById('stopVoiceBtn').style.display = 'inline-block';
+      document.getElementById('voiceStatus').innerHTML = '🎤 Listening...';
+    }
+
+    function pauseVoiceRecording() {
+      isPaused = true;
+      recognition.stop();
+      
+      document.getElementById('pauseVoiceBtn').style.display = 'none';
+      document.getElementById('startVoiceBtn').style.display = 'inline-block';
+      document.getElementById('voiceStatus').innerHTML = '⏸️ Paused - Tap a cell to select, then hit Start to resume';
+    }
+
+    function stopVoiceRecording() {
+      isRecording = false;
+      isPaused = false;
+      recognition.stop();
+      
+      if (currentCell) {
+        currentCell.classList.remove('cell-highlight');
+        currentCell = null;
+      }
+      
+      document.getElementById('startVoiceBtn').style.display = 'inline-block';
+      document.getElementById('pauseVoiceBtn').style.display = 'none';
+      document.getElementById('stopVoiceBtn').style.display = 'none';
+      document.getElementById('voiceStatus').innerHTML = 'Ready to record';
+    }
+
+    function highlightCell(cell) {
+      // Remove highlight from all cells
+      document.querySelectorAll('td').forEach(td => td.classList.remove('cell-highlight'));
+      // Highlight current cell
+      if (cell) {
+        cell.classList.add('cell-highlight');
+      }
+    }
+
+    function moveToNextCell() {
+      if (!currentCell) return;
+
+      const allCells = Array.from(document.querySelectorAll('td[contenteditable="true"]'));
+      const currentIndex = allCells.indexOf(currentCell);
+      
+      if (currentIndex < allCells.length - 1) {
+        currentCell = allCells[currentIndex + 1];
+        highlightCell(currentCell);
+      } else {
+        // Reached end
+        stopVoiceRecording();
+        alert('Reached end of data entry');
+      }
+    }
+
+    // Allow manual cell selection during recording
+    document.addEventListener('click', function(e) {
+      if (e.target.tagName === 'TD' && e.target.hasAttribute('contenteditable')) {
+        if (isRecording || isPaused) {
+          currentCell = e.target;
+          highlightCell(currentCell);
+        }
+      }
+    });
+
+    function loadTrials() {
+      const trialList = document.getElementById('trialList');
+      trialList.innerHTML = '';
+
       if (trials.length === 0) {
         trialList.innerHTML = '<p style="color: #666;">No trials yet. Create your first trial!</p>';
         return;
       }
 
-      trialList.innerHTML = trials.map(trial => `
-        <div class="trial-card" onclick="loadTrial('${trial.code}')">
+      trials.forEach((trial, index) => {
+        const card = document.createElement('div');
+        card.className = 'trial-card';
+        card.innerHTML = `
           <strong>${trial.code}</strong><br>
-          <small>${trial.data.length} records</small>
-        </div>
-      `).join('');
+          <small>${trial.treatments} treatments × ${trial.reps} reps × ${trial.subplots} subplots</small>
+        `;
+        card.onclick = () => loadTrial(index);
+        trialList.appendChild(card);
+      });
     }
 
-    // Get all trials from localStorage
-    function getAllTrials() {
-      const trials = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key.startsWith('trial_')) {
-          trials.push(JSON.parse(localStorage.getItem(key)));
-        }
-      }
-      return trials;
-    }
-
-    // Show setup screen
     function showSetupScreen() {
       document.getElementById('trialSelectionScreen').style.display = 'none';
       document.getElementById('setupScreen').style.display = 'block';
     }
 
-    // Back to selection
     function backToSelection() {
       document.getElementById('setupScreen').style.display = 'none';
       document.getElementById('dataEntryScreen').style.display = 'none';
       document.getElementById('trialSelectionScreen').style.display = 'block';
-      loadTrialList();
+      currentTrial = null;
+      stopVoiceRecording();
+      loadTrials();
     }
 
-    // Create new trial
     function createTrial() {
       const code = document.getElementById('code').value.trim();
-      const numTreatments = parseInt(document.getElementById('treatments').value);
-      const numReps = parseInt(document.getElementById('reps').value);
-      const numSubplots = parseInt(document.getElementById('subplots').value);
+      const treatments = parseInt(document.getElementById('treatments').value);
+      const reps = parseInt(document.getElementById('reps').value);
+      const subplots = parseInt(document.getElementById('subplots').value);
 
-      if (!code || numTreatments < 1 || numReps < 1 || numSubplots < 1) {
-        alert('Please fill all fields with valid numbers');
+      if (!code) {
+        alert('Please enter a trial code');
         return;
       }
 
-      // Generate data structure
-      const data = [];
-      for (let t = 1; t <= numTreatments; t++) {
-        for (let r = 1; r <= numReps; r++) {
-          for (let s = 1; s <= numSubplots; s++) {
-            const row = {
-              treatment: `T${t}`,
-              rep: `R${r}`,
-              subplot: `S${s}`
-            };
-            assessmentColumns.forEach(col => row[col] = '');
-            data.push(row);
+      const trial = {
+        code: code,
+        treatments: treatments,
+        reps: reps,
+        subplots: subplots,
+        assessments: [],
+        data: []
+      };
+
+      // Initialize data structure
+      for (let t = 1; t <= treatments; t++) {
+        for (let r = 1; r <= reps; r++) {
+          for (let s = 1; s <= subplots; s++) {
+            trial.data.push({
+              treatment: t,
+              rep: r,
+              subplot: s,
+              values: {}
+            });
           }
         }
       }
 
-      currentTrial = { code, data };
-      saveTrialToStorage(currentTrial);
-
-      document.getElementById('setupScreen').style.display = 'none';
-      document.getElementById('dataEntryScreen').style.display = 'block';
-      document.getElementById('trialTitle').textContent = `Trial: ${code}`;
-
-      renderTable();
-      renderAssessmentList();
-      highlightCurrentCell();
-    }
-
-    // Load existing trial
-    function loadTrial(code) {
-      const trial = JSON.parse(localStorage.getItem(`trial_${code}`));
-      if (!trial) {
-        alert('Trial not found');
-        return;
-      }
-
-      currentTrial = trial;
+      trials.push(trial);
+      localStorage.setItem('trials', JSON.stringify(trials));
       
-      // Extract assessment columns from first data row
-      if (trial.data.length > 0) {
-        assessmentColumns = Object.keys(trial.data[0]).filter(
-          key => !['treatment', 'rep', 'subplot'].includes(key)
-        );
-      }
+      loadTrial(trials.length - 1);
+    }
+        function loadTrial(index) {
+      currentTrial = index;
+      const trial = trials[index];
 
       document.getElementById('trialSelectionScreen').style.display = 'none';
+      document.getElementById('setupScreen').style.display = 'none';
       document.getElementById('dataEntryScreen').style.display = 'block';
-      document.getElementById('trialTitle').textContent = `Trial: ${code}`;
 
+      document.getElementById('trialTitle').textContent = `Trial: ${trial.code}`;
+
+      renderAssessments();
       renderTable();
-      renderAssessmentList();
-      highlightCurrentCell();
     }
 
-    // Save trial to localStorage
-    function saveTrialToStorage(trial) {
-      localStorage.setItem(`trial_${trial.code}`, JSON.stringify(trial));
-    }
-
-    // Render table
-    function renderTable() {
-      const headerRow = document.getElementById('tableHeader');
-      const tbody = document.getElementById('tableBody');
-
-      // Create header
-      headerRow.innerHTML = `
-        <tr>
-          <th>Treatment</th>
-          <th>Rep</th>
-          <th>Subplot</th>
-          ${assessmentColumns.map(col => `<th>${col}</th>`).join('')}
-        </tr>
-      `;
-
-      // Create data rows
-      tbody.innerHTML = currentTrial.data.map((row, idx) => `
-        <tr data-row="${idx}">
-          <td>${row.treatment}</td>
-          <td>${row.rep}</td>
-          <td>${row.subplot}</td>
-          ${assessmentColumns.map((col, colIdx) => `
-            <td contenteditable="true" 
-                data-row="${idx}" 
-                data-col="${colIdx}"
-                onblur="updateCell(${idx}, '${col}', this.textContent)"
-                onfocus="setCurrentCell(${idx}, ${colIdx})"
-            >${row[col] || ''}</td>
-          `).join('')}
-        </tr>
-      `).join('');
-    }
-
-    // Render assessment list
-    function renderAssessmentList() {
+    function renderAssessments() {
+      const trial = trials[currentTrial];
       const list = document.getElementById('assessmentList');
-      list.innerHTML = assessmentColumns.map((col, idx) => `
-        <div class="assessment-tag">
-          ${col}
-          <button onclick="removeAssessment(${idx})">×</button>
-        </div>
-      `).join('');
+      list.innerHTML = '';
+
+      trial.assessments.forEach((assessment, index) => {
+        const tag = document.createElement('div');
+        tag.className = 'assessment-tag';
+        tag.innerHTML = `
+          ${assessment}
+          <button onclick="removeAssessment(${index})">×</button>
+        `;
+        list.appendChild(tag);
+      });
     }
 
-    // Add assessment column
     function addAssessment() {
       const input = document.getElementById('newAssessment');
       const name = input.value.trim();
-      
+
       if (!name) {
-        alert('Please enter a column name');
+        alert('Please enter an assessment name');
         return;
       }
 
-      if (assessmentColumns.includes(name)) {
-        alert('Column already exists');
-        return;
-      }
+      const trial = trials[currentTrial];
+      trial.assessments.push(name);
+      
+      // Initialize values for this assessment
+      trial.data.forEach(row => {
+        row.values[name] = '';
+      });
 
-      assessmentColumns.push(name);
-      
-      // Add column to all data rows
-      currentTrial.data.forEach(row => row[name] = '');
-      
-      saveTrialToStorage(currentTrial);
+      saveCurrentTrial();
+      renderAssessments();
       renderTable();
-      renderAssessmentList();
       
       input.value = '';
     }
 
-    // Remove assessment column
-    function removeAssessment(idx) {
-      if (!confirm(`Remove "${assessmentColumns[idx]}" column?`)) return;
-      
-      const colName = assessmentColumns[idx];
-      assessmentColumns.splice(idx, 1);
-      
-      // Remove from all data rows
-      currentTrial.data.forEach(row => delete row[colName]);
-      
-      saveTrialToStorage(currentTrial);
-      renderTable();
-      renderAssessmentList();
-    }
+    function removeAssessment(index) {
+      if (!confirm('Remove this assessment column?')) return;
 
-    // Update cell value
-    function updateCell(rowIdx, colName, value) {
-      currentTrial.data[rowIdx][colName] = value.trim();
-      saveTrialToStorage(currentTrial);
-    }
-
-    // Set current cell for navigation
-    function setCurrentCell(row, col) {
-      currentCell = { row, col };
-    }
-
-    // Highlight current cell
-    function highlightCurrentCell() {
-      document.querySelectorAll('td[contenteditable]').forEach(td => {
-        td.classList.remove('cell-highlight');
+      const trial = trials[currentTrial];
+      const assessmentName = trial.assessments[index];
+      
+      trial.assessments.splice(index, 1);
+      
+      // Remove values for this assessment
+      trial.data.forEach(row => {
+        delete row.values[assessmentName];
       });
 
-      const cell = document.querySelector(`td[data-row="${currentCell.row}"][data-col="${currentCell.col}"]`);
-      if (cell) {
-        cell.classList.add('cell-highlight');
-        cell.focus();
-      }
+      saveCurrentTrial();
+      renderAssessments();
+      renderTable();
     }
 
-    // Keyboard navigation
-    document.addEventListener('keydown', function(e) {
-      if (document.getElementById('dataEntryScreen').style.display !== 'block') return;
-      
-      const maxRow = currentTrial.data.length - 1;
-      const maxCol = assessmentColumns.length - 1;
+    function renderTable() {
+      const trial = trials[currentTrial];
+      const header = document.getElementById('tableHeader');
+      const body = document.getElementById('tableBody');
 
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        if (currentCell.row < maxRow) {
-          currentCell.row++;
-          highlightCurrentCell();
-        }
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        if (currentCell.row > 0) {
-          currentCell.row--;
-          highlightCurrentCell();
-        }
-      } else if (e.key === 'ArrowRight' || e.key === 'Tab') {
-        e.preventDefault();
-        if (currentCell.col < maxCol) {
-          currentCell.col++;
-        } else if (currentCell.row < maxRow) {
-          currentCell.col = 0;
-          currentCell.row++;
-        }
-        highlightCurrentCell();
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        if (currentCell.col > 0) {
-          currentCell.col--;
-        } else if (currentCell.row > 0) {
-          currentCell.col = maxCol;
-          currentCell.row--;
-        }
-        highlightCurrentCell();
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        if (currentCell.row < maxRow) {
-          currentCell.row++;
-          highlightCurrentCell();
-        }
-      }
-    });
+      // Build header
+      let headerHTML = '<tr><th>Treatment</th><th>Rep</th><th>Subplot</th>';
+      trial.assessments.forEach(assessment => {
+        headerHTML += `<th>${assessment}</th>`;
+      });
+      headerHTML += '</tr>';
+      header.innerHTML = headerHTML;
 
-    // Export to CSV
+      // Build body
+      body.innerHTML = '';
+      trial.data.forEach((row, rowIndex) => {
+        const tr = document.createElement('tr');
+        
+        tr.innerHTML = `
+          <td>${row.treatment}</td>
+          <td>${row.rep}</td>
+          <td>${row.subplot}</td>
+        `;
+
+        trial.assessments.forEach(assessment => {
+          const td = document.createElement('td');
+          td.contentEditable = true;
+          td.textContent = row.values[assessment] || '';
+          td.addEventListener('blur', function() {
+            row.values[assessment] = this.textContent.trim();
+            saveCurrentTrial();
+          });
+          tr.appendChild(td);
+        });
+
+        body.appendChild(tr);
+      });
+    }
+
+    function saveCurrentTrial() {
+      localStorage.setItem('trials', JSON.stringify(trials));
+    }
+
     function exportToCSV() {
-      const headers = ['Treatment', 'Rep', 'Subplot', ...assessmentColumns];
-      const rows = currentTrial.data.map(row => [
-        row.treatment,
-        row.rep,
-        row.subplot,
-        ...assessmentColumns.map(col => row[col] || '')
-      ]);
+      const trial = trials[currentTrial];
+      
+      // Build CSV header
+      let csv = 'Treatment,Rep,Subplot,' + trial.assessments.join(',') + '\n';
+      
+      // Build CSV rows
+      trial.data.forEach(row => {
+        let rowData = [row.treatment, row.rep, row.subplot];
+        trial.assessments.forEach(assessment => {
+          rowData.push(row.values[assessment] || '');
+        });
+        csv += rowData.join(',') + '\n';
+      });
 
-      let csv = headers.join(',') + '\n';
-      csv += rows.map(row => row.join(',')).join('\n');
-
+      // Download
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${currentTrial.code}_data.csv`;
+      a.download = `${trial.code}_data.csv`;
       a.click();
       window.URL.revokeObjectURL(url);
     }
