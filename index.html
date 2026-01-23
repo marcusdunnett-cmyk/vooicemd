@@ -404,7 +404,7 @@
       </div>
     </div>
   </div>
-  <script>
+ <script>
     let currentTrial = null;
     let trials = JSON.parse(localStorage.getItem('trials')) || [];
     let isRecording = false;
@@ -744,16 +744,6 @@
     }
 
     function removeAssessment(index) {
-      if (!confirm('Remove this assessment column?')) return;
-
-      const trial = trials[currentTrial];
-      const assessmentName = trial.assessments[index];
-      
-      trial.assessments.splice(index, 1);
-      
-      trial.data.forEach(row => {
-        delete row.values[assess
-              function removeAssessment(index) {
       if (!confirm('Remove this assessment column?')) return;
 
       const trial = trials[currentTrial];
