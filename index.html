@@ -198,14 +198,15 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 600px;
+      max-width: 600px;
+      margin: 0 auto;
     }
 
     th, td {
-      padding: 12px;
-      text-align: left;
+      padding: 10px;
+      text-align: center;
       border: 1px solid #e0e0e0;
-      min-width: 80px;
+      width: auto;
     }
 
     th {
@@ -320,7 +321,10 @@
       th, td {
         padding: 8px;
         font-size: 13px;
-        min-width: 70px;
+      }
+
+      table {
+        max-width: 100%;
       }
     }
   </style>
@@ -357,12 +361,12 @@
 
         <div class="control-group">
           <label>Number of Treatments:</label>
-          <input type="number" id="numTreatments" value="5" min="1" max="1000">
+          <input type="number" id="numTreatments" value="3" min="1" max="100">
         </div>
 
         <div class="control-group">
           <label>Number of Reps:</label>
-          <input type="number" id="numReps" value="4" min="1" max="100">
+          <input type="number" id="numReps" value="3" min="1" max="100">
         </div>
 
         <div class="control-group">
@@ -442,6 +446,7 @@ let recognition = null;
 let batchMode = false;
 let navigationDirection = 'horizontal';
 let currentTrial = null;
+let currentTrialIndex = -1;
 
 // Audio context for beep
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -491,9 +496,11 @@ function showPage(pageId) {
 
 // Start new trial
 function startNewTrial() {
+  currentTrialIndex = -1;
+  currentTrial = null;
   document.getElementById('trialName').value = '';
-  document.getElementById('numTreatments').value = '5';
-  document.getElementById('numReps').value = '4';
+  document.getElementById('numTreatments').value = '3';
+  document.getElementById('numReps').value = '3';
   document.getElementById('numSubplots').value = '2';
   document.getElementById('columnNames').value = 'Height, Width';
   showPage('setupPage');
@@ -528,6 +535,7 @@ function loadTrialList() {
 function openTrial(index) {
   const trials = JSON.parse(localStorage.getItem('trials') || '[]');
   currentTrial = trials[index];
+  currentTrialIndex = index;
   
   // Set up form
   document.getElementById('trialName').value = currentTrial.name;
@@ -540,7 +548,9 @@ function openTrial(index) {
   generateTable();
   
   // Load data
-  loadTrialData(currentTrial.data);
+  setTimeout(() => {
+    loadTrialData(currentTrial.data);
+  }, 100);
   
   showPage('dataEntryPage');
   showToast('✅ Trial loaded');
@@ -557,7 +567,7 @@ function deleteTrial(index) {
   showToast('🗑️ Trial deleted');
 }
 
-// Generate table
+// Generate table with rep-based plot numbering
 function generateTable() {
   const trialName = document.getElementById('trialName').value || 'Unnamed Trial';
   const numTreatments = parseInt(document.getElementById('numTreatments').value);
@@ -570,12 +580,10 @@ function generateTable() {
     return;
   }
   
-  // Calculate total plots
-  const totalPlots = numTreatments * numReps;
-  
   const table = document.getElementById('dataTable');
   table.innerHTML = '';
   
+  // Create header
   const thead = table.createTHead();
   const headerRow = thead.insertRow();
   headerRow.insertCell().outerHTML = '<th>Plot</th>';
@@ -586,51 +594,64 @@ function generateTable() {
   
   const tbody = table.createTBody();
   
-  let plotNumber = 101;
-  for (let i = 0; i < totalPlots; i++) {
-    for (let subplot = 1; subplot <= numSubplots; subplot++) {
-      const row = tbody.insertRow();
-      row.insertCell().textContent = plotNumber;
-      row.insertCell().textContent = subplot;
+  // Generate rows with rep-based numbering
+  // Rep 1: 101, 102, 103...
+  // Rep 2: 201, 202, 203...
+  for (let rep = 1; rep <= numReps; rep++) {
+    for (let trt = 1; trt <= numTreatments; trt++) {
+      const plotNumber = (rep * 100) + trt;
       
-      columnNames.forEach(() => {
-        const cell = row.insertCell();
-        cell.contentEditable = 'true';
-        cell.textContent = '';
+      for (let subplot = 1; subplot <= numSubplots; subplot++) {
+        const row = tbody.insertRow();
+        row.insertCell().textContent = plotNumber;
+        row.insertCell().textContent = subplot;
         
-        cell.addEventListener('focus', function() {
-          currentCell = this;
-          highlightCell(this);
-        });
-        
-        cell.addEventListener('blur', function() {
-          saveTrialData();
-        });
-        
-        cell.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            const nextCell = getNextEditableCell(this);
-            if (nextCell) {
-              nextCell.focus();
+        columnNames.forEach(() => {
+          const cell = row.insertCell();
+          cell.contentEditable = 'true';
+          cell.textContent = '';
+          
+          cell.addEventListener('focus', function() {
+            currentCell = this;
+            highlightCell(this);
+          });
+          
+          cell.addEventListener('blur', function() {
+            saveTrialData();
+          });
+          
+          cell.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              const nextCell = getNextEditableCell(this);
+              if (nextCell) {
+                nextCell.focus();
+              }
             }
-          }
+          });
         });
-      });
+      }
     }
-    plotNumber++;
   }
   
-  // Store trial metadata
-  currentTrial = {
-    name: trialName,
-    treatments: numTreatments,
-    reps: numReps,
-    subplots: numSubplots,
-    columns: columnNames,
-    date: new Date().toISOString(),
-    data: []
-  };
+  // Update or create trial metadata
+  if (!currentTrial) {
+    currentTrial = {
+      name: trialName,
+      treatments: numTreatments,
+      reps: numReps,
+      subplots: numSubplots,
+      columns: columnNames,
+      date: new Date().toISOString(),
+      data: []
+    };
+  } else {
+    currentTrial.name = trialName;
+    currentTrial.treatments = numTreatments;
+    currentTrial.reps = numReps;
+    currentTrial.subplots = numSubplots;
+    currentTrial.columns = columnNames;
+  }
   
   showPage('dataEntryPage');
   showToast('✅ Table generated successfully');
@@ -910,7 +931,7 @@ function loadTrialData(data) {
   rows.forEach((row, rowIndex) => {
     if (data[rowIndex]) {
       Array.from(row.cells).forEach((cell, cellIndex) => {
-        if (data[rowIndex][cellIndex]) {
+        if (data[rowIndex][cellIndex] !== undefined) {
           cell.textContent = data[rowIndex][cellIndex];
         }
       });
@@ -920,22 +941,27 @@ function loadTrialData(data) {
 
 // Save and exit
 function saveAndExit() {
-  if (!currentTrial) return;
+  if (!currentTrial) {
+    showPage('homePage');
+    return;
+  }
   
   saveTrialData();
   
   const trials = JSON.parse(localStorage.getItem('trials') || '[]');
-  const existingIndex = trials.findIndex(t => 
-    t.name === currentTrial.name && t.date === currentTrial.date
-  );
   
-  if (existingIndex >= 0) {
-    trials[existingIndex] = currentTrial;
+  if (currentTrialIndex >= 0) {
+    // Update existing trial
+    trials[currentTrialIndex] = currentTrial;
   } else {
+    // Add new trial
     trials.push(currentTrial);
   }
   
   localStorage.setItem('trials', JSON.stringify(trials));
+  
+  currentTrial = null;
+  currentTrialIndex = -1;
   
   showPage('homePage');
   loadTrialList();
