@@ -2,87 +2,91 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Syngenta Trial Data Entry</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Voice Data Entry - Mobile Optimized</title>
   <style>
     * {
-      margin: 0;
-      padding: 0;
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
       padding: 10px;
+      background: #f5f5f5;
+      font-size: 14px;
     }
 
     .container {
-      max-width: 100%;
+      max-width: 1200px;
       margin: 0 auto;
       background: white;
-      border-radius: 15px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       overflow: hidden;
     }
 
     .header {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      padding: 20px 15px;
+      padding: 15px 20px;
       text-align: center;
     }
 
     .header h1 {
-      font-size: 1.5em;
-      margin-bottom: 5px;
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
     }
 
-    .header p {
-      font-size: 0.9em;
-    }
-
-    .content {
+    .controls {
       padding: 15px;
+      background: #fafafa;
+      border-bottom: 1px solid #e0e0e0;
     }
 
-    .form-group {
+    .control-group {
       margin-bottom: 15px;
     }
 
-    .form-group label {
-      display: block;
-      font-weight: 600;
-      margin-bottom: 5px;
-      color: #333;
-      font-size: 14px;
+    .control-group:last-child {
+      margin-bottom: 0;
     }
 
-    .form-group input {
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #333;
+      font-size: 13px;
+    }
+
+    input[type="number"],
+    input[type="text"] {
       width: 100%;
-      padding: 10px;
-      border: 2px solid #ddd;
-      border-radius: 8px;
-      font-size: 16px;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
       transition: border-color 0.3s;
     }
 
-    .form-group input:focus {
+    input:focus {
       outline: none;
       border-color: #667eea;
     }
 
-    .btn {
-      padding: 12px 24px;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
+    button {
+      width: 100%;
+      padding: 14px;
+      font-size: 15px;
       font-weight: 600;
+      border: none;
+      border-radius: 6px;
       cursor: pointer;
       transition: all 0.3s;
-      margin: 5px 5px 5px 0;
-      width: 100%;
+      touch-action: manipulation;
     }
 
     .btn-primary {
@@ -90,205 +94,157 @@
       color: white;
     }
 
-    .btn-secondary {
-      background: #6c757d;
-      color: white;
+    .btn-primary:active {
+      transform: scale(0.98);
     }
 
     .btn-success {
-      background: #28a745;
+      background: #10b981;
       color: white;
     }
 
     .btn-danger {
-      background: #dc3545;
+      background: #ef4444;
+      color: white;
+    }
+
+    .btn-secondary {
+      background: #6b7280;
+      color: white;
+    }
+
+    .mode-btn {
+      background: #e5e7eb;
+      color: #374151;
+      padding: 12px;
+      font-size: 14px;
+    }
+
+    .mode-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
     }
 
     .table-container {
       overflow-x: auto;
-      margin-top: 15px;
-      border: 2px solid #ddd;
-      border-radius: 8px;
-      max-height: 400px;
-      overflow-y: auto;
       -webkit-overflow-scrolling: touch;
+      padding: 15px;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      background: white;
-      font-size: 14px;
+      min-width: 600px;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border: 1px solid #e0e0e0;
+      min-width: 80px;
     }
 
     th {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 10px 8px;
-      text-align: left;
+      background: #f3f4f6;
       font-weight: 600;
+      color: #374151;
       position: sticky;
       top: 0;
       z-index: 10;
       font-size: 13px;
     }
 
-    td {
-      padding: 10px 8px;
-      border: 1px solid #ddd;
-      min-width: 70px;
-      font-size: 14px;
-    }
-
     td[contenteditable="true"] {
+      background: #fefce8;
       cursor: text;
-      background: #f8f9fa;
+      transition: background-color 0.3s;
     }
 
-    .cell-highlight {
-      background: #fff3cd !important;
-      outline: 3px solid #ffc107 !important;
+    td[contenteditable="true"]:focus {
+      outline: 2px solid #667eea;
+      background: #fff;
+    }
+
+    .highlight {
+      background: #dbeafe !important;
+      outline: 3px solid #3b82f6 !important;
       animation: pulse 1s infinite;
     }
 
     @keyframes pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
-      50% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
+      0%, 100% { outline-color: #3b82f6; }
+      50% { outline-color: #60a5fa; }
     }
 
-    .assessment-manager {
-      margin-top: 15px;
+    .status {
       padding: 15px;
-      background: #f8f9fa;
-      border-radius: 8px;
-    }
-
-    .assessment-manager h3 {
-      margin-bottom: 10px;
-      color: #333;
-      font-size: 16px;
-    }
-
-    .assessment-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .assessment-tag {
-      background: #667eea;
-      color: white;
-      padding: 6px 12px;
-      border-radius: 20px;
+      background: #f9fafb;
+      border-top: 1px solid #e0e0e0;
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 13px;
-    }
-
-    .assessment-tag button {
-      background: rgba(255,255,255,0.3);
-      border: none;
-      color: white;
-      border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      cursor: pointer;
-      font-size: 12px;
-      line-height: 1;
-    }
-
-    #setupScreen, #dataEntryScreen {
-      display: none;
-    }
-
-    .trial-selector {
-      margin-bottom: 20px;
-      padding: 15px;
-      background: #f8f9fa;
-      border-radius: 8px;
-    }
-
-    .trial-list {
-      display: flex;
+      justify-content: space-between;
       flex-wrap: wrap;
       gap: 10px;
     }
 
-    .trial-card {
-      background: white;
-      padding: 12px 15px;
-      border-radius: 8px;
-      border: 2px solid #ddd;
-      cursor: pointer;
-      transition: all 0.3s;
-      font-size: 14px;
-      flex: 1 1 calc(50% - 5px);
-      min-width: 150px;
-    }
-
-    .voice-controls {
-      margin-top: 15px;
-      padding: 15px;
-      background: #f0f4ff;
-      border-radius: 8px;
-      border: 2px solid #667eea;
-    }
-
-    .voice-controls h3 {
-      font-size: 16px;
-      margin-bottom: 10px;
-    }
-
-    .voice-status {
-      padding: 12px;
-      background: white;
-      border-radius: 8px;
-      margin-top: 10px;
-      font-size: 14px;
-      text-align: center;
-      min-height: 50px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      word-wrap: break-word;
-    }
-
-    .mode-toggle {
-      display: flex;
-      gap: 8px;
-      margin: 10px 0;
-      flex-direction: column;
-    }
-
-    .mode-toggle label {
-      font-weight: 600;
-      color: #333;
+    #voiceStatus {
+      font-weight: 500;
+      color: #374151;
       font-size: 14px;
     }
 
-    .mode-buttons {
-      display: flex;
-      gap: 8px;
+    .recording {
+      color: #ef4444;
+      animation: blink 1s infinite;
     }
 
-    @media (min-width: 768px) {
-      .container {
-        max-width: 1400px;
+    @keyframes blink {
+      0%, 50%, 100% { opacity: 1; }
+      25%, 75% { opacity: 0.5; }
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.85);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 1000;
+      animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
       }
-      
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 5px;
+      }
+
       .header h1 {
-        font-size: 2em;
+        font-size: 18px;
       }
-      
-      .btn {
-        width: auto;
+
+      .controls {
+        padding: 12px;
       }
-      
-      .trial-card {
-        flex: 0 1 auto;
+
+      th, td {
+        padding: 8px;
+        font-size: 13px;
+        min-width: 70px;
       }
     }
   </style>
@@ -296,688 +252,523 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>🌾 Syngenta Trial Data Entry</h1>
-      <p>Professional Field Trial Management System</p>
+      <h1>🎤 Voice Data Entry System</h1>
     </div>
 
-    <div class="content">
-      <!-- Trial Selection Screen -->
-      <div id="trialSelectionScreen">
-        <div class="trial-selector">
-          <h3>Select Existing Trial</h3>
-          <div class="trial-list" id="trialList"></div>
+    <div class="controls">
+      <div class="control-group">
+        <label>Number of Plots:</label>
+        <input type="number" id="numPlots" value="5" min="1" max="1000">
+      </div>
+
+      <div class="control-group">
+        <label>Number of Subplots per Plot:</label>
+        <input type="number" id="numSubplots" value="2" min="1" max="100">
+      </div>
+
+      <div class="control-group">
+        <label>Column Names (comma-separated):</label>
+        <input type="text" id="columnNames" value="Height, Width" placeholder="e.g., Height, Width, Yield">
+      </div>
+
+      <div class="control-group">
+        <button class="btn-primary" onclick="generateTable()">📊 Generate Table</button>
+      </div>
+
+      <div class="control-group">
+        <label>Voice Input Mode:</label>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="mode-btn active" data-mode="one" style="flex: 1; min-width: 120px;">
+            📝 One-at-a-Time
+          </button>
+          <button class="mode-btn" data-mode="batch" style="flex: 1; min-width: 120px;">
+            📊 Batch Mode
+          </button>
+          <button id="directionToggle" class="mode-btn" style="flex: 1; min-width: 120px;">
+            ➡️ Horizontal
+          </button>
         </div>
-        <button class="btn btn-primary" onclick="showSetupScreen()">
-          ➕ Create New Trial
+      </div>
+
+      <div class="control-group">
+        <button id="voiceBtn" class="btn-success" onclick="toggleVoiceRecording()">
+          🎤 Start Voice Input
         </button>
       </div>
 
-      <!-- Setup Screen -->
-      <div id="setupScreen">
-        <h2 style="margin-bottom: 20px; color: #333; font-size: 1.3em;">Create New Trial</h2>
-        
-        <div class="form-group">
-          <label for="code">Trial Code</label>
-          <input type="text" id="code" placeholder="e.g., TRIAL-2024-001">
-        </div>
-
-        <div class="form-group">
-          <label for="treatments">Number of Treatments</label>
-          <input type="number" id="treatments" min="1" value="4">
-        </div>
-
-        <div class="form-group">
-          <label for="reps">Number of Replications</label>
-          <input type="number" id="reps" min="1" value="3">
-        </div>
-
-        <div class="form-group">
-          <label for="subplots">Number of Subplots per Rep</label>
-          <input type="number" id="subplots" min="1" value="2">
-        </div>
-
-        <button class="btn btn-primary" onclick="createTrial()">
-          Create Trial
-        </button>
-        <button class="btn btn-secondary" onclick="backToSelection()">
-          Cancel
+      <div class="control-group">
+        <button class="btn-secondary" onclick="exportToCSV()">
+          💾 Export to CSV
         </button>
       </div>
+    </div>
 
-      <!-- Data Entry Screen -->
-      <div id="dataEntryScreen">
-        <h2 id="trialTitle" style="margin-bottom: 15px; color: #333; font-size: 1.2em;"></h2>
+    <div class="table-container">
+      <table id="dataTable"></table>
+    </div>
 
-        <div class="assessment-manager">
-          <h3>Assessment Columns</h3>
-          <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-            <input type="text" id="newAssessment" placeholder="e.g., Plant Height" style="flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
-            <button class="btn btn-primary" onclick="addAssessment()" style="width: auto; padding: 10px 20px;">Add</button>
-          </div>
-          <div class="assessment-list" id="assessmentList"></div>
-        </div>
-
-        <div class="voice-controls">
-          <h3>🎤 Voice Recording</h3>
-          
-          <div class="mode-toggle">
-            <label>Recording Mode:</label>
-            <div class="mode-buttons">
-              <button class="btn btn-primary" id="oneAtATimeBtn" onclick="setRecordingMode('oneAtATime')" style="flex: 1;">
-                One-at-a-Time
-              </button>
-              <button class="btn btn-secondary" id="batchBtn" onclick="setRecordingMode('batch')" style="flex: 1;">
-                Batch Mode
-              </button>
-            </div>
-          </div>
-
-          <div style="margin-top: 10px;">
-            <button class="btn btn-success" id="startVoiceBtn" onclick="startVoiceRecording()">
-              🎤 Start Recording
-            </button>
-            <button class="btn btn-danger" id="pauseVoiceBtn" onclick="pauseVoiceRecording()" style="display: none;">
-              ⏸️ Pause
-            </button>
-            <button class="btn btn-secondary" id="stopVoiceBtn" onclick="stopVoiceRecording()" style="display: none;">
-              ⏹️ Stop
-            </button>
-          </div>
-
-          <div class="voice-status" id="voiceStatus">
-            Ready to record
-          </div>
-        </div>
-
-        <div class="table-container">
-          <table>
-            <thead id="tableHeader"></thead>
-            <tbody id="tableBody"></tbody>
-          </table>
-        </div>
-
-        <div style="margin-top: 15px; display: flex; gap: 8px; flex-wrap: wrap;">
-          <button class="btn btn-success" onclick="exportToCSV()" style="flex: 1;">📥 Export CSV</button>
-          <button class="btn btn-secondary" onclick="backToSelection()" style="flex: 1;">🔙 Back</button>
-        </div>
-      </div>
+    <div class="status">
+      <span id="voiceStatus">Ready to start</span>
     </div>
   </div>
-    <script>
-    let currentTrial = null;
-    let trials = JSON.parse(localStorage.getItem('trials')) || [];
-    let isRecording = false;
-    let isPaused = false;
-    let recognition = null;
-    let currentCell = null;
-    let recordingMode = 'oneAtATime';
-    let audioContext = null;
-    let batchValues = [];
 
-    const wordToNumber = {
-      'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
-      'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9',
-      'ten': '10', 'eleven': '11', 'twelve': '12', 'thirteen': '13',
-      'fourteen': '14', 'fifteen': '15', 'sixteen': '16', 'seventeen': '17',
-      'eighteen': '18', 'nineteen': '19', 'twenty': '20', 'thirty': '30',
-      'forty': '40', 'fifty': '50', 'sixty': '60', 'seventy': '70',
-      'eighty': '80', 'ninety': '90', 'hundred': '100'
-    };
+<script>
+  // Global variables
+let currentCell = null;
+let isRecording = false;
+let recognition = null;
+let batchMode = false;
+let navigationDirection = 'horizontal'; // New variable for direction toggle
 
-    // Initialize audio context for beep
-    function initAudio() {
-      if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      }
-    }
+// Audio context for beep
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-    // Play beep sound when moving to next cell
-    function playBeep(frequency = 800, duration = 100) {
-      try {
-        if (!audioContext) initAudio();
+// Play beep sound
+function playBeep() {
+  try {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = 800;
+    oscillator.type = 'sine';
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.1);
+  } catch (e) {
+    console.log('Audio not available');
+  }
+}
+
+// Show toast notification
+function showToast(message) {
+  const existingToast = document.querySelector('.toast');
+  if (existingToast) {
+    existingToast.remove();
+  }
+  
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => toast.remove(), 2000);
+}
+
+// Generate table
+function generateTable() {
+  const numPlots = parseInt(document.getElementById('numPlots').value);
+  const numSubplots = parseInt(document.getElementById('numSubplots').value);
+  const columnNames = document.getElementById('columnNames').value.split(',').map(c => c.trim()).filter(c => c);
+  
+  if (numPlots < 1 || numSubplots < 1 || columnNames.length === 0) {
+    showToast('⚠️ Please fill all fields correctly');
+    return;
+  }
+  
+  const table = document.getElementById('dataTable');
+  table.innerHTML = '';
+  
+  const thead = table.createTHead();
+  const headerRow = thead.insertRow();
+  headerRow.insertCell().outerHTML = '<th>Plot</th>';
+  headerRow.insertCell().outerHTML = '<th>Subplot</th>';
+  columnNames.forEach(name => {
+    headerRow.insertCell().outerHTML = `<th>${name}</th>`;
+  });
+  
+  const tbody = table.createTBody();
+  
+  for (let plot = 101; plot < 101 + numPlots; plot++) {
+    for (let subplot = 1; subplot <= numSubplots; subplot++) {
+      const row = tbody.insertRow();
+      row.insertCell().textContent = plot;
+      row.insertCell().textContent = subplot;
+      
+      columnNames.forEach(() => {
+        const cell = row.insertCell();
+        cell.contentEditable = 'true';
+        cell.textContent = '';
         
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.value = frequency;
-        oscillator.type = 'sine';
-        
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + duration / 1000);
-      } catch (error) {
-        console.log('Audio not available:', error);
-      }
-    }
-
-    // Initialize app
-    function init() {
-      loadTrialList();
-      showScreen('trialSelectionScreen');
-    }
-
-    // Screen navigation
-    function showScreen(screenId) {
-      document.getElementById('trialSelectionScreen').style.display = 'none';
-      document.getElementById('setupScreen').style.display = 'none';
-      document.getElementById('dataEntryScreen').style.display = 'none';
-      document.getElementById(screenId).style.display = 'block';
-    }
-
-    function showSetupScreen() {
-      showScreen('setupScreen');
-    }
-
-    function backToSelection() {
-      if (isRecording) stopVoiceRecording();
-      currentTrial = null;
-      showScreen('trialSelectionScreen');
-    }
-
-    // Load trial list
-    function loadTrialList() {
-      const trialList = document.getElementById('trialList');
-      trialList.innerHTML = '';
-      
-      if (trials.length === 0) {
-        trialList.innerHTML = '<p style="color: #666; font-size: 14px;">No trials yet. Create one to get started!</p>';
-        return;
-      }
-      
-      trials.forEach((trial, index) => {
-        const card = document.createElement('div');
-        card.className = 'trial-card';
-        card.innerHTML = `
-          <strong>${trial.code}</strong><br>
-          <small>${trial.treatments} treatments × ${trial.reps} reps</small>
-        `;
-        card.onclick = () => loadTrial(index);
-        trialList.appendChild(card);
-      });
-    }
-
-    // Create new trial
-    function createTrial() {
-      const code = document.getElementById('code').value.trim();
-      const treatments = parseInt(document.getElementById('treatments').value);
-      const reps = parseInt(document.getElementById('reps').value);
-      const subplots = parseInt(document.getElementById('subplots').value);
-      
-      if (!code) {
-        alert('Please enter a trial code');
-        return;
-      }
-      
-      const trial = {
-        code,
-        treatments,
-        reps,
-        subplots,
-        assessments: [],
-        data: []
-      };
-      
-      // Initialize data structure
-      for (let t = 1; t <= treatments; t++) {
-        for (let r = 1; r <= reps; r++) {
-          for (let s = 1; s <= subplots; s++) {
-            trial.data.push({
-              treatment: t,
-              rep: r,
-              subplot: s,
-              values: {}
-            });
-          }
-        }
-      }
-      
-      trials.push(trial);
-      localStorage.setItem('trials', JSON.stringify(trials));
-      
-      currentTrial = trials.length - 1;
-      loadTrial(currentTrial);
-    }
-
-    // Load existing trial
-    function loadTrial(index) {
-      currentTrial = index;
-      const trial = trials[currentTrial];
-      
-      document.getElementById('trialTitle').textContent = `Trial: ${trial.code}`;
-      
-      renderAssessments();
-      renderTable();
-      showScreen('dataEntryScreen');
-    }
-
-    // Render assessment tags
-    function renderAssessments() {
-      const trial = trials[currentTrial];
-      const list = document.getElementById('assessmentList');
-      list.innerHTML = '';
-      
-      trial.assessments.forEach((assessment, index) => {
-        const tag = document.createElement('div');
-        tag.className = 'assessment-tag';
-        tag.innerHTML = `
-          ${assessment}
-          <button onclick="removeAssessment(${index})">×</button>
-        `;
-        list.appendChild(tag);
-      });
-    }
-
-    // Add assessment column
-    function addAssessment() {
-      const input = document.getElementById('newAssessment');
-      const assessment = input.value.trim();
-      
-      if (!assessment) return;
-      
-      const trial = trials[currentTrial];
-      
-      if (trial.assessments.includes(assessment)) {
-        alert('This assessment already exists');
-        return;
-      }
-      
-      trial.assessments.push(assessment);
-      localStorage.setItem('trials', JSON.stringify(trials));
-      
-      input.value = '';
-      renderAssessments();
-      renderTable();
-    }
-
-    // Remove assessment column
-    function removeAssessment(index) {
-      if (!confirm('Remove this assessment column?')) return;
-      
-      const trial = trials[currentTrial];
-      const assessment = trial.assessments[index];
-      
-      trial.assessments.splice(index, 1);
-      
-      // Remove data for this assessment
-      trial.data.forEach(row => {
-        delete row.values[assessment];
-      });
-      
-      localStorage.setItem('trials', JSON.stringify(trials));
-      
-      renderAssessments();
-      renderTable();
-    }
-
-    // Render data table
-    function renderTable() {
-      const trial = trials[currentTrial];
-      const header = document.getElementById('tableHeader');
-      const body = document.getElementById('tableBody');
-      
-      // Create header
-      let headerHTML = '<tr><th>Treatment</th><th>Rep</th><th>Subplot</th>';
-      trial.assessments.forEach(assessment => {
-        headerHTML += `<th>${assessment}</th>`;
-      });
-      headerHTML += '</tr>';
-      header.innerHTML = headerHTML;
-      
-      // Create body
-      body.innerHTML = '';
-      trial.data.forEach((row, rowIndex) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${row.treatment}</td>
-          <td>${row.rep}</td>
-          <td>${row.subplot}</td>
-        `;
-        
-        trial.assessments.forEach(assessment => {
-          const td = document.createElement('td');
-          td.contentEditable = true;
-          td.textContent = row.values[assessment] || '';
-          td.dataset.row = rowIndex;
-          td.dataset.assessment = assessment;
-          
-          td.addEventListener('blur', function() {
-            saveCell(this);
-          });
-          
-          td.addEventListener('focus', function() {
-            currentCell = this;
-            highlightCell(this);
-          });
-          
-          tr.appendChild(td);
+        cell.addEventListener('focus', function() {
+          currentCell = this;
+          highlightCell(this);
         });
         
-        body.appendChild(tr);
+        cell.addEventListener('blur', function() {
+          saveCell(this);
+        });
+        
+        cell.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const nextCell = getNextEditableCell(this);
+            if (nextCell) {
+              nextCell.focus();
+            }
+          }
+        });
       });
     }
+  }
+  
+  loadData();
+  showToast('✅ Table generated successfully');
+}
 
-    // Highlight current cell
-    function highlightCell(cell) {
-      document.querySelectorAll('td').forEach(td => {
-        td.classList.remove('cell-highlight');
-      });
-      if (cell) {
-        cell.classList.add('cell-highlight');
+// Highlight current cell
+function highlightCell(cell) {
+  document.querySelectorAll('.highlight').forEach(c => c.classList.remove('highlight'));
+  cell.classList.add('highlight');
+}
+
+// Get next editable cell (respects direction mode)
+function getNextEditableCell(cell) {
+  if (!cell) return null;
+  
+  if (navigationDirection === 'horizontal') {
+    // Horizontal logic: move right across row, then next row
+    let nextCell = cell.nextElementSibling;
+    while (nextCell && !nextCell.hasAttribute('contenteditable')) {
+      nextCell = nextCell.nextElementSibling;
+    }
+    
+    if (nextCell) return nextCell;
+    
+    let nextRow = cell.parentElement.nextElementSibling;
+    while (nextRow) {
+      let firstEditableCell = nextRow.querySelector('td[contenteditable="true"]');
+      if (firstEditableCell) return firstEditableCell;
+      nextRow = nextRow.nextElementSibling;
+    }
+    return null;
+    
+  } else {
+    // Vertical logic: move down same column, then next column
+    const currentRow = cell.parentElement;
+    const currentCellIndex = Array.from(currentRow.cells).indexOf(cell);
+    
+    // Try next row, same column
+    let nextRow = currentRow.nextElementSibling;
+    while (nextRow) {
+      const sameColumnCell = nextRow.cells[currentCellIndex];
+      if (sameColumnCell && sameColumnCell.hasAttribute('contenteditable')) {
+        return sameColumnCell;
+      }
+      nextRow = nextRow.nextElementSibling;
+    }
+    
+    // Reached bottom of column, move to next column
+    const firstRow = document.querySelector('#dataTable tbody tr');
+    if (!firstRow) return null;
+    
+    // Find next editable column
+    for (let i = currentCellIndex + 1; i < firstRow.cells.length; i++) {
+      const nextColCell = firstRow.cells[i];
+      if (nextColCell && nextColCell.hasAttribute('contenteditable')) {
+        return nextColCell;
       }
     }
-
-    // Save cell data
-    function saveCell(cell) {
-      const trial = trials[currentTrial];
-      const rowIndex = parseInt(cell.dataset.row);
-      const assessment = cell.dataset.assessment;
-      const value = cell.textContent.trim();
-      
-      trial.data[rowIndex].values[assessment] = value;
-      localStorage.setItem('trials', JSON.stringify(trials));
-    }
-          // Set recording mode
-    function setRecordingMode(mode) {
-      recordingMode = mode;
-      
-      document.getElementById('oneAtATimeBtn').className = 
-        mode === 'oneAtATime' ? 'btn btn-primary' : 'btn btn-secondary';
-      document.getElementById('batchBtn').className = 
-        mode === 'batch' ? 'btn btn-primary' : 'btn btn-secondary';
-      
-      const status = document.getElementById('voiceStatus');
-      if (mode === 'oneAtATime') {
-        status.textContent = 'Mode: One value per cell (auto-advance)';
-      } else {
-        status.textContent = 'Mode: Batch (comma-separated values)';
-      }
-    }
-
-    // Initialize speech recognition
-    function initRecognition() {
-      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        alert('Speech recognition not supported in this browser. Please use Chrome or Edge.');
-        return null;
-      }
-      
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recog = new SpeechRecognition();
-      
-      recog.continuous = true;
-      recog.interimResults = true;
-      recog.lang = 'en-US';
-      
-      recog.onresult = (event) => {
-        if (isPaused) return;
-        
-        const last = event.results.length - 1;
-        const transcript = event.results[last][0].transcript.trim();
-        const isFinal = event.results[last].isFinal;
-        
-        document.getElementById('voiceStatus').textContent = 
-          `${isFinal ? '✓' : '...'} "${transcript}"`;
-        
-        if (isFinal) {
-          processVoiceInput(transcript);
-        }
-      };
-      
-      recog.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
-        if (event.error === 'no-speech') {
-          document.getElementById('voiceStatus').textContent = 'Listening... (say a value)';
-        }
-      };
-      
-      recog.onend = () => {
-        if (isRecording && !isPaused) {
-          recognition.start();
-        }
-      };
-      
-      return recog;
-    }
-
-    // Process voice input
-    function processVoiceInput(transcript) {
-      if (!currentCell) {
-        findNextEmptyCell();
-        if (!currentCell) {
-          document.getElementById('voiceStatus').textContent = 'All cells filled!';
-          stopVoiceRecording();
-          return;
-        }
-      }
-      
-      if (recordingMode === 'batch') {
+    
+    return null; // No more cells
+  }
+}
+  // Initialize voice recognition
+function initVoiceRecognition() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    showToast('❌ Speech recognition not supported');
+    return false;
+  }
+  
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRecognition();
+  recognition.continuous = true;
+  recognition.interimResults = false;
+  recognition.lang = 'en-US';
+  
+  recognition.onresult = function(event) {
+    const transcript = event.results[event.results.length - 1][0].transcript.trim();
+    console.log('Transcript:', transcript);
+    
+    if (currentCell) {
+      if (batchMode) {
         processBatchInput(transcript);
       } else {
-        processOneAtATimeInput(transcript);
+        processVoiceInput(transcript);
       }
     }
-
-    // Process one-at-a-time mode
-    function processOneAtATimeInput(transcript) {
-      const value = parseTranscript(transcript);
-      
-      if (value) {
-        currentCell.textContent = value;
-        saveCell(currentCell);
-        
-        // Play beep before moving to next cell
-        playBeep();
-        
-        // Move to next cell after short delay
-        setTimeout(() => {
-          moveToNextCell();
-        }, 150);
-      }
+  };
+  
+  recognition.onerror = function(event) {
+    console.error('Recognition error:', event.error);
+    if (event.error === 'no-speech') {
+      return;
     }
-
-    // Process batch mode (comma-separated values)
-    function processBatchInput(transcript) {
-      // Split by commas and clean up each value
-      const values = transcript.split(',')
-        .map(v => parseTranscript(v.trim()))
-        .filter(v => v !== null && v !== '');
-      
-      if (values.length === 0) return;
-      
-      let cellsToFill = [currentCell];
-      let tempCell = currentCell;
-      
-      // Find next cells to fill
-      for (let i = 1; i < values.length; i++) {
-        tempCell = getNextEditableCell(tempCell);
-        if (tempCell) {
-          cellsToFill.push(tempCell);
-        } else {
-          break;
-        }
-      }
-      
-      // Fill the cells
-      cellsToFill.forEach((cell, index) => {
-        if (index < values.length) {
-          cell.textContent = values[index];
-          saveCell(cell);
-        }
-      });
-      
-      // Play beep and move to next empty cell
-      playBeep();
-      
-      setTimeout(() => {
-        const lastFilledCell = cellsToFill[cellsToFill.length - 1];
-        const nextCell = getNextEditableCell(lastFilledCell);
-        if (nextCell) {
-          currentCell = nextCell;
-          highlightCell(currentCell);
-          currentCell.focus();
-        } else {
-          document.getElementById('voiceStatus').textContent = 'All cells filled!';
-          stopVoiceRecording();
-        }
-      }, 150);
+    showToast(`⚠️ Error: ${event.error}`);
+  };
+  
+  recognition.onend = function() {
+    if (isRecording) {
+      recognition.start();
     }
+  };
+  
+  return true;
+}
 
-    // Parse transcript to number
-    function parseTranscript(transcript) {
-      const lower = transcript.toLowerCase().trim();
-      
-      // Handle "point" or "dot" for decimals
-      let cleaned = lower.replace(/\s+(point|dot)\s+/g, '.');
-      
-      // Convert words to numbers
-      Object.keys(wordToNumber).forEach(word => {
-        cleaned = cleaned.replace(new RegExp('\\b' + word + '\\b', 'g'), wordToNumber[word]);
-      });
-      
-      // Extract number (including decimals and negatives)
-      const match = cleaned.match(/-?\d+\.?\d*/);
-      return match ? match[0] : null;
+// Toggle voice recording
+function toggleVoiceRecording() {
+  if (!recognition && !initVoiceRecognition()) {
+    return;
+  }
+  
+  if (isRecording) {
+    stopVoiceRecording();
+  } else {
+    startVoiceRecording();
+  }
+}
+
+// Start voice recording
+function startVoiceRecording() {
+  const firstEditableCell = document.querySelector('td[contenteditable="true"]');
+  if (!firstEditableCell) {
+    showToast('⚠️ Generate table first');
+    return;
+  }
+  
+  if (!currentCell) {
+    currentCell = firstEditableCell;
+    highlightCell(currentCell);
+    currentCell.focus();
+  }
+  
+  try {
+    recognition.start();
+    isRecording = true;
+    document.getElementById('voiceBtn').textContent = '⏹️ Stop Voice Input';
+    document.getElementById('voiceBtn').className = 'btn-danger';
+    document.getElementById('voiceStatus').textContent = '🎤 Listening...';
+    document.getElementById('voiceStatus').className = 'recording';
+    showToast('🎤 Voice input started');
+  } catch (e) {
+    console.error('Start error:', e);
+  }
+}
+
+// Stop voice recording
+function stopVoiceRecording() {
+  if (recognition) {
+    recognition.stop();
+  }
+  isRecording = false;
+  document.getElementById('voiceBtn').textContent = '🎤 Start Voice Input';
+  document.getElementById('voiceBtn').className = 'btn-success';
+  document.getElementById('voiceStatus').textContent = 'Ready to start';
+  document.getElementById('voiceStatus').className = '';
+  showToast('⏹️ Voice input stopped');
+}
+
+// Parse transcript into numeric value
+function parseTranscript(text) {
+  text = text.toLowerCase().trim();
+  
+  const directNumber = text.match(/^-?\d+\.?\d*$/);
+  if (directNumber) {
+    return text;
+  }
+  
+  const wordToNumber = {
+    'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
+    'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9',
+    'ten': '10', 'eleven': '11', 'twelve': '12', 'thirteen': '13',
+    'fourteen': '14', 'fifteen': '15', 'sixteen': '16', 'seventeen': '17',
+    'eighteen': '18', 'nineteen': '19', 'twenty': '20', 'thirty': '30',
+    'forty': '40', 'fifty': '50', 'sixty': '60', 'seventy': '70',
+    'eighty': '80', 'ninety': '90'
+  };
+  
+  if (wordToNumber[text]) {
+    return wordToNumber[text];
+  }
+  
+  const decimalMatch = text.match(/(\d+)\s*(?:point|dot)\s*(\d+)/);
+  if (decimalMatch) {
+    return `${decimalMatch[1]}.${decimalMatch[2]}`;
+  }
+  
+  return text;
+}
+
+// Process voice input (one-at-a-time mode)
+function processVoiceInput(transcript) {
+  const value = parseTranscript(transcript);
+  currentCell.textContent = value;
+  saveCell(currentCell);
+  
+  playBeep();
+  
+  setTimeout(() => {
+    const nextCell = getNextEditableCell(currentCell);
+    if (nextCell) {
+      currentCell = nextCell;
+      highlightCell(currentCell);
+      currentCell.focus();
+    } else {
+      document.getElementById('voiceStatus').textContent = 'All cells filled!';
+      stopVoiceRecording();
     }
+  }, 150);
+}
 
-    // Get next editable cell
-    function getNextEditableCell(fromCell) {
-      if (!fromCell) return null;
-      
-      const allCells = Array.from(document.querySelectorAll('td[contenteditable="true"]'));
-      const currentIndex = allCells.indexOf(fromCell);
-      
-      if (currentIndex === -1 || currentIndex >= allCells.length - 1) {
-        return null;
-      }
-      
-      return allCells[currentIndex + 1];
+// Process batch mode (handles multiple input patterns)
+function processBatchInput(transcript) {
+  let values = [];
+  const cleaned = transcript.trim();
+  
+  // Case 1: Continuous digits like "12345" → split each character
+  if (/^\d+$/.test(cleaned)) {
+    values = cleaned.split('');
+  }
+  // Case 2: Space-separated like "1 2 3 4 5"
+  else if (/^[\d\s]+$/.test(cleaned) && cleaned.includes(' ')) {
+    values = cleaned.split(/\s+/).filter(v => v);
+  }
+  // Case 3: Comma-separated like "1, 2, 3" (original)
+  else {
+    values = cleaned.split(',')
+      .map(v => parseTranscript(v.trim()))
+      .filter(v => v !== null && v !== '');
+  }
+  
+  if (values.length === 0) return;
+  
+  let cellsToFill = [currentCell];
+  let tempCell = currentCell;
+  
+  // Find next cells to fill
+  for (let i = 1; i < values.length; i++) {
+    tempCell = getNextEditableCell(tempCell);
+    if (tempCell) {
+      cellsToFill.push(tempCell);
+    } else {
+      break;
     }
-
-    // Move to next cell
-    function moveToNextCell() {
-      const nextCell = getNextEditableCell(currentCell);
-      
-      if (nextCell) {
-        currentCell = nextCell;
-        highlightCell(currentCell);
-        currentCell.focus();
-      } else {
-        document.getElementById('voiceStatus').textContent = 'All cells filled!';
-        stopVoiceRecording();
-      }
+  }
+  
+  // Fill the cells
+  cellsToFill.forEach((cell, index) => {
+    if (index < values.length) {
+      cell.textContent = values[index];
+      saveCell(cell);
     }
-
-    // Find next empty cell
-    function findNextEmptyCell() {
-      const cells = document.querySelectorAll('td[contenteditable="true"]');
-      for (let cell of cells) {
-        if (!cell.textContent.trim()) {
-          currentCell = cell;
-          highlightCell(currentCell);
-          currentCell.focus();
-          return;
-        }
-      }
-      currentCell = null;
+  });
+  
+  // Play beep and move to next empty cell
+  playBeep();
+  
+  setTimeout(() => {
+    const lastFilledCell = cellsToFill[cellsToFill.length - 1];
+    const nextCell = getNextEditableCell(lastFilledCell);
+    if (nextCell) {
+      currentCell = nextCell;
+      highlightCell(currentCell);
+      currentCell.focus();
+    } else {
+      document.getElementById('voiceStatus').textContent = 'All cells filled!';
+      stopVoiceRecording();
     }
+  }, 150);
+}
+  // Save cell data
+function saveCell(cell) {
+  const row = cell.parentElement;
+  const cellIndex = Array.from(row.cells).indexOf(cell);
+  const rowIndex = Array.from(row.parentElement.rows).indexOf(row);
+  
+  const key = `cell_${rowIndex}_${cellIndex}`;
+  localStorage.setItem(key, cell.textContent);
+}
 
-    // Start voice recording
-    function startVoiceRecording() {
-      initAudio(); // Initialize audio context for beeps
-      
-      if (!recognition) {
-        recognition = initRecognition();
-        if (!recognition) return;
+// Load data from localStorage
+function loadData() {
+  const rows = document.querySelectorAll('#dataTable tbody tr');
+  rows.forEach((row, rowIndex) => {
+    Array.from(row.cells).forEach((cell, cellIndex) => {
+      const key = `cell_${rowIndex}_${cellIndex}`;
+      const savedValue = localStorage.getItem(key);
+      if (savedValue !== null) {
+        cell.textContent = savedValue;
       }
-      
-      if (!currentCell) {
-        findNextEmptyCell();
-        if (!currentCell) {
-          alert('No empty cells to fill!');
-          return;
-        }
-      }
-      
-      isRecording = true;
-      isPaused = false;
-      
-      try {
-        recognition.start();
-        
-        document.getElementById('startVoiceBtn').style.display = 'none';
-        document.getElementById('pauseVoiceBtn').style.display = 'inline-block';
-        document.getElementById('stopVoiceBtn').style.display = 'inline-block';
-        
-        document.getElementById('voiceStatus').textContent = '🎤 Recording... Speak now!';
-      } catch (error) {
-        console.error('Error starting recognition:', error);
-      }
-    }
+    });
+  });
+}
 
-    // Pause voice recording
-    function pauseVoiceRecording() {
-      isPaused = !isPaused;
-      
-      const btn = document.getElementById('pauseVoiceBtn');
-      if (isPaused) {
-        btn.textContent = '▶️ Resume';
-        document.getElementById('voiceStatus').textContent = '⏸️ Paused';
-      } else {
-        btn.textContent = '⏸️ Pause';
-        document.getElementById('voiceStatus').textContent = '🎤 Recording... Speak now!';
-      }
-    }
+// Export table to CSV
+function exportToCSV() {
+  const table = document.getElementById('dataTable');
+  if (!table.rows.length) {
+    showToast('⚠️ No data to export');
+    return;
+  }
+  
+  let csv = [];
+  
+  // Headers
+  const headers = Array.from(table.rows[0].cells).map(cell => cell.textContent);
+  csv.push(headers.join(','));
+  
+  // Data rows
+  for (let i = 1; i < table.rows.length; i++) {
+    const row = Array.from(table.rows[i].cells).map(cell => {
+      const value = cell.textContent.replace(/"/g, '""');
+      return `"${value}"`;
+    });
+    csv.push(row.join(','));
+  }
+  
+  const csvContent = csv.join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  
+  link.setAttribute('href', url);
+  link.setAttribute('download', `voice_data_${new Date().getTime()}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  showToast('✅ CSV exported successfully');
+}
 
-    // Stop voice recording
-    function stopVoiceRecording() {
-      if (recognition) {
-        recognition.stop();
-      }
-      
-      isRecording = false;
-      isPaused = false;
-      
-      document.getElementById('startVoiceBtn').style.display = 'inline-block';
-      document.getElementById('pauseVoiceBtn').style.display = 'none';
-      document.getElementById('stopVoiceBtn').style.display = 'none';
-      
-      document.getElementById('voiceStatus').textContent = 'Recording stopped';
-      
-      highlightCell(null);
-    }
+// Mode toggle functionality
+document.querySelectorAll('.mode-btn[data-mode]').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const mode = this.getAttribute('data-mode');
+    document.querySelectorAll('.mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    batchMode = (mode === 'batch');
+    showToast(`Mode: ${batchMode ? 'Batch 📊' : 'One-at-a-Time 📝'}`);
+  });
+});
 
-    // Export to CSV
-    function exportToCSV() {
-      const trial = trials[currentTrial];
-      
-      let csv = 'Treatment,Rep,Subplot,' + trial.assessments.join(',') + '\n';
-      
-      trial.data.forEach(row => {
-        let line = `${row.treatment},${row.rep},${row.subplot}`;
-        
-        trial.assessments.forEach(assessment => {
-          const value = row.values[assessment] || '';
-          line += ',' + value;
-        });
-        
-        csv += line + '\n';
-      });
-      
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${trial.code}_data.csv`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-    }
+// Direction toggle functionality
+document.getElementById('directionToggle').addEventListener('click', function() {
+  navigationDirection = navigationDirection === 'horizontal' ? 'vertical' : 'horizontal';
+  this.innerHTML = navigationDirection === 'horizontal' ? '➡️ Horizontal' : '⬇️ Vertical';
+  showToast(`Navigation: ${navigationDirection === 'horizontal' ? 'Horizontal ➡️' : 'Vertical ⬇️'}`);
+});
 
-    // Initialize on page load
-    window.onload = init;
-  </script>
+// Initialize on page load
+window.addEventListener('load', function() {
+  generateTable();
+});
+</script>
 </body>
 </html>
