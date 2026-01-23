@@ -269,6 +269,18 @@
       outline: 2px solid #f59e0b !important;
     }
 
+    /* PLOT COLOR CLASSES */
+    .plot-color-0 { background: #dbeafe !important; }
+    .plot-color-1 { background: #dcfce7 !important; }
+    .plot-color-2 { background: #fef3c7 !important; }
+    .plot-color-3 { background: #fce7f3 !important; }
+    .plot-color-4 { background: #e0e7ff !important; }
+    .plot-color-5 { background: #fef2f2 !important; }
+    .plot-color-6 { background: #f0fdfa !important; }
+    .plot-color-7 { background: #fdf4ff !important; }
+    .plot-color-8 { background: #fffbeb !important; }
+    .plot-color-9 { background: #f5f3ff !important; }
+
     @keyframes pulse {
       0%, 100% { outline-color: #3b82f6; }
       50% { outline-color: #60a5fa; }
@@ -476,7 +488,7 @@
 
         <div class="control-group">
           <label>Custom Column Names (comma-separated):</label>
-          <input type="text" id="columnNames" value="Height, Width" placeholder="e.g., Height, Width, Yield">
+          <input type="text" id="columnNames" value="" placeholder="e.g., Height, Width, Yield">
         </div>
 
         <div class="control-group">
@@ -565,11 +577,11 @@
 let currentCell = null;
 let isRecording = false;
 let recognition = null;
-let batchMode = true; // DEFAULT TO BATCH MODE
+let batchMode = true;
 let navigationDirection = 'horizontal';
 let currentTrial = null;
 let currentTrialIndex = -1;
-let currentPlotNumber = null; // TRACK CURRENT PLOT FOR BEEP
+let currentPlotNumber = null;
 
 // Audio context for beep
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -616,12 +628,10 @@ function showPage(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(pageId).classList.add('active');
   
-  // Show/hide floating buttons based on page
   const voiceFloatBtn = document.getElementById('voiceFloatBtn');
   const scrollTopBtn = document.getElementById('scrollTopBtn');
   
   if (pageId === 'dataEntryPage') {
-    // Show buttons after a short delay to check if table exists
     setTimeout(() => {
       if (document.querySelector('#dataTable tbody tr')) {
         voiceFloatBtn.classList.add('show');
@@ -641,7 +651,7 @@ function startNewTrial() {
   document.getElementById('numTreatments').value = '3';
   document.getElementById('numReps').value = '3';
   document.getElementById('numSubplots').value = '2';
-  document.getElementById('columnNames').value = 'Height, Width';
+  document.getElementById('columnNames').value = '';
   showPage('setupPage');
 }
 
@@ -676,17 +686,14 @@ function openTrial(index) {
   currentTrial = trials[index];
   currentTrialIndex = index;
   
-  // Set up form
   document.getElementById('trialName').value = currentTrial.name;
   document.getElementById('numTreatments').value = currentTrial.treatments;
   document.getElementById('numReps').value = currentTrial.reps;
   document.getElementById('numSubplots').value = currentTrial.subplots;
   document.getElementById('columnNames').value = currentTrial.columns.join(', ');
   
-  // Generate table
   generateTable();
   
-  // Load data
   setTimeout(() => {
     loadTrialData(currentTrial.data);
   }, 100);
@@ -706,7 +713,14 @@ function deleteTrial(index) {
   showToast('🗑️ Trial deleted');
 }
 
-// Generate table with rep-based plot numbering
+// Get color class for plot number
+function getPlotColorClass(plotNumber) {
+  // Use plot number to determine color (10 different colors)
+  const colorIndex = plotNumber % 10;
+  return `plot-color-${colorIndex}`;
+}
+
+// Generate table with rep-based plot numbering and COLOR CODING
 function generateTable() {
   const trialName = document.getElementById('trialName').value || 'Unnamed Trial';
   const numTreatments = parseInt(document.getElementById('numTreatments').value);
@@ -722,7 +736,6 @@ function generateTable() {
   const table = document.getElementById('dataTable');
   table.innerHTML = '';
   
-  // Create header
   const thead = table.createTHead();
   const headerRow = thead.insertRow();
   headerRow.insertCell().outerHTML = '<th>Plot</th>';
@@ -733,15 +746,23 @@ function generateTable() {
   
   const tbody = table.createTBody();
   
-  // Generate rows with rep-based numbering
   for (let rep = 1; rep <= numReps; rep++) {
     for (let trt = 1; trt <= numTreatments; trt++) {
       const plotNumber = (rep * 100) + trt;
+      const colorClass = getPlotColorClass(plotNumber);
       
       for (let subplot = 1; subplot <= numSubplots; subplot++) {
         const row = tbody.insertRow();
-        row.insertCell().textContent = plotNumber;
-        row.insertCell().textContent = subplot;
+        
+        // PLOT CELL WITH COLOR
+        const plotCell = row.insertCell();
+        plotCell.textContent = plotNumber;
+        plotCell.className = colorClass;
+        
+        // SUBPLOT CELL WITH SAME COLOR
+        const subplotCell = row.insertCell();
+        subplotCell.textContent = subplot;
+        subplotCell.className = colorClass;
         
         columnNames.forEach(() => {
           const cell = row.insertCell();
@@ -771,7 +792,6 @@ function generateTable() {
     }
   }
   
-  // Update or create trial metadata
   if (!currentTrial) {
     currentTrial = {
       name: trialName,
@@ -803,7 +823,6 @@ function searchPlot() {
     return;
   }
   
-  // Remove previous search highlights
   document.querySelectorAll('.search-highlight').forEach(cell => {
     cell.classList.remove('search-highlight');
   });
@@ -814,15 +833,12 @@ function searchPlot() {
   for (let row of rows) {
     const plotCell = row.cells[0];
     if (parseInt(plotCell.textContent) === plotNumber) {
-      // Highlight the row
       for (let i = 0; i < row.cells.length; i++) {
         row.cells[i].classList.add('search-highlight');
       }
       
-      // Scroll to the row
       row.scrollIntoView({ behavior: 'smooth', block: 'center' });
       
-      // Focus on first editable cell of this row
       const firstEditableCell = row.querySelector('td[contenteditable="true"]');
       if (firstEditableCell) {
         setTimeout(() => {
@@ -863,7 +879,6 @@ window.addEventListener('scroll', function() {
   }
 });
 
-// Also check table container scroll
 document.addEventListener('DOMContentLoaded', function() {
   const tableContainer = document.getElementById('tableContainer');
   if (tableContainer) {
@@ -900,7 +915,6 @@ function getPlotNumberFromCell(cell) {
 function getNextEditableCell(cell) {
   if (!cell) return null;
   
-  // Store current plot number before moving
   const oldPlotNumber = getPlotNumberFromCell(cell);
   
   let nextCell = null;
@@ -961,7 +975,6 @@ function checkAndBeepOnPlotChange(oldPlotNumber, newCell) {
   const newPlotNumber = getPlotNumberFromCell(newCell);
   
   if (oldPlotNumber !== null && newPlotNumber !== null && oldPlotNumber !== newPlotNumber) {
-    // Plot changed! Play beep
     playBeep();
   }
 }
@@ -1036,7 +1049,6 @@ function startVoiceRecording() {
     currentCell.focus();
   }
   
-  // Set initial plot number
   currentPlotNumber = getPlotNumberFromCell(currentCell);
   
   try {
@@ -1047,7 +1059,6 @@ function startVoiceRecording() {
     document.getElementById('voiceStatus').textContent = '🎤 Listening...';
     document.getElementById('voiceStatus').className = 'recording';
     
-    // Update floating button
     const voiceFloatBtn = document.getElementById('voiceFloatBtn');
     voiceFloatBtn.textContent = '⏹️';
     voiceFloatBtn.classList.add('recording');
@@ -1070,7 +1081,6 @@ function stopVoiceRecording() {
   document.getElementById('voiceStatus').textContent = 'Ready to start';
   document.getElementById('voiceStatus').className = '';
   
-  // Update floating button
   const voiceFloatBtn = document.getElementById('voiceFloatBtn');
   voiceFloatBtn.textContent = '🎤';
   voiceFloatBtn.classList.remove('recording');
@@ -1082,13 +1092,11 @@ function stopVoiceRecording() {
 function parseTranscript(text) {
   text = text.toLowerCase().trim();
   
-  // Direct number match (including decimals and negatives)
   const directNumber = text.match(/^-?\d+\.?\d*$/);
   if (directNumber) {
     return text;
   }
   
-  // Word to number conversion
   const wordToNumber = {
     'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
     'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9',
@@ -1103,13 +1111,11 @@ function parseTranscript(text) {
     return wordToNumber[text];
   }
   
-  // Decimal variations (e.g., "3 point 5" or "3 dot 5")
   const decimalMatch = text.match(/(\d+)\s*(?:point|dot)\s*(\d+)/);
   if (decimalMatch) {
     return `${decimalMatch[1]}.${decimalMatch[2]}`;
   }
   
-  // NOT A NUMBER - RETURN NULL
   return null;
 }
 
@@ -1117,7 +1123,6 @@ function parseTranscript(text) {
 function processVoiceInput(transcript) {
   const value = parseTranscript(transcript);
   
-  // IGNORE IF NOT A NUMBER
   if (value === null) {
     console.log('Ignored non-numeric input:', transcript);
     return;
@@ -1125,8 +1130,6 @@ function processVoiceInput(transcript) {
   
   currentCell.textContent = value;
   saveTrialData();
-  
-  // Don't beep here - beep happens in getNextEditableCell
   
   setTimeout(() => {
     const nextCell = getNextEditableCell(currentCell);
@@ -1146,21 +1149,16 @@ function processBatchInput(transcript) {
   let values = [];
   const cleaned = transcript.trim();
   
-  // Try to extract numbers from transcript
   if (/^\d+$/.test(cleaned)) {
-    // All digits, split into individual numbers
     values = cleaned.split('').filter(v => v);
   } else if (/^[\d\s]+$/.test(cleaned) && cleaned.includes(' ')) {
-    // Space-separated numbers
     values = cleaned.split(/\s+/).filter(v => v);
   } else {
-    // Try comma-separated or parse each part
     values = cleaned.split(/[,\s]+/)
       .map(v => parseTranscript(v.trim()))
-      .filter(v => v !== null); // FILTER OUT NON-NUMBERS
+      .filter(v => v !== null);
   }
   
-  // IGNORE IF NO VALID NUMBERS FOUND
   if (values.length === 0) {
     console.log('Ignored non-numeric batch input:', transcript);
     return;
@@ -1185,8 +1183,6 @@ function processBatchInput(transcript) {
   });
   
   saveTrialData();
-  
-  // Don't beep here - beep happens in getNextEditableCell
   
   setTimeout(() => {
     const lastFilledCell = cellsToFill[cellsToFill.length - 1];
